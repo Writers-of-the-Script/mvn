@@ -62,12 +62,6 @@ impl HasCode for JoinError {
     }
 }
 
-impl HasCode for minify_html_onepass::Error {
-    fn code(&self) -> u16 {
-        500
-    }
-}
-
 pub trait AxumError: Display
 where
     Self: Sized + HasCode,

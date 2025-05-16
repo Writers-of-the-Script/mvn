@@ -14,7 +14,6 @@ use axum::{
 };
 use axum_extra::TypedHeader;
 use http_body_util::BodyExt;
-use minify_html_onepass::{Cfg, copy};
 
 async fn get_handler(state: RouteContext, path: String) -> Result<Response, Response> {
     let read = state.read();
@@ -100,18 +99,9 @@ async fn get_handler(state: RouteContext, path: String) -> Result<Response, Resp
                     title: "Redstone's Maven".into(),
                 };
 
-                let html = copy(
-                    data.render().into_axum()?.as_bytes(),
-                    &Cfg {
-                        minify_css: true,
-                        minify_js: true,
-                    },
-                )
-                .into_axum()?;
-
                 Ok(Response::builder()
                     .status(200)
-                    .body(html.into())
+                    .body(data.render().into_axum()?.into())
                     .into_axum()?)
             }
 
@@ -202,7 +192,7 @@ pub async fn route_handler(
 
             let mut write = state.write();
 
-            if write.has_file(&path).await.into_axum()? {
+            if write.has_file(&path).await {
                 write.delete_file(&path).await.into_axum()?;
                 write.index_dirs().await.into_axum()?;
             }

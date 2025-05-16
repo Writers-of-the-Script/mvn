@@ -1,6 +1,7 @@
-use crate::models::MavenFile;
 use askama::Template;
 use humansize::WINDOWS;
+
+use crate::files::models::MavenFile;
 
 #[derive(Template)]
 #[template(path = "index.html")]

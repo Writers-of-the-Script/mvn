@@ -1,5 +1,5 @@
 use anyhow::Result;
-use mvn::run;
+use mvn::run::run;
 
 #[tokio::main]
 pub async fn main() -> Result<()> {
