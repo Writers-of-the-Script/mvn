@@ -1,0 +1,6 @@
+/target
+*.db
+maven_storage
+flamegraph.svg
+perf.*
+profile.json.gz
