@@ -10,7 +10,11 @@ pub trait HasCode {
 
 impl HasCode for anyhow::Error {
     fn code(&self) -> u16 {
-        500
+        if self.to_string() == "404 Not Found" {
+            404
+        } else {
+            500
+        }
     }
 }
 
@@ -57,6 +61,18 @@ impl HasCode for zip::result::ZipError {
 }
 
 impl HasCode for JoinError {
+    fn code(&self) -> u16 {
+        500
+    }
+}
+
+impl HasCode for diesel::result::Error {
+    fn code(&self) -> u16 {
+        500
+    }
+}
+
+impl HasCode for diesel_async::pooled_connection::deadpool::PoolError {
     fn code(&self) -> u16 {
         500
     }

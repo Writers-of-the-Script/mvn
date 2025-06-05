@@ -9,6 +9,14 @@ pub struct MavenToken {
     pub created: NaiveDateTime,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MavenTokenSafe {
+    pub id: i32,
+    pub name: String,
+    pub created: NaiveDateTime,
+    pub value: Option<String>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Insertable, Identifiable, Queryable, Selectable)]
 #[diesel(table_name = crate::schema::master_keys)]
 pub struct MasterKey {
@@ -50,5 +58,16 @@ impl MavenTokenPath {
 
     pub fn is_read_write(&self) -> bool {
         self.permission == 2
+    }
+}
+
+impl MavenToken {
+    pub fn safe(self, value: Option<String>) -> MavenTokenSafe {
+        MavenTokenSafe {
+            id: self.id,
+            name: self.name,
+            created: self.created,
+            value,
+        }
     }
 }

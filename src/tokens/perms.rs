@@ -26,3 +26,17 @@ impl MavenTokenPermissions {
         }
     }
 }
+
+impl Into<i16> for MavenTokenPermissions {
+    fn into(self) -> i16 {
+        self.value()
+    }
+}
+
+impl TryFrom<i16> for MavenTokenPermissions {
+    type Error = anyhow::Error;
+
+    fn try_from(value: i16) -> Result<Self, Self::Error> {
+        Self::from_value(value)
+    }
+}

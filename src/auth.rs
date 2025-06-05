@@ -1,15 +1,13 @@
-use crate::{cx::RouteContextInner, tokens::models::MavenToken};
+use crate::{cx::RouteContext, tokens::models::MavenToken};
 use anyhow::{Result, anyhow};
 use axum::http::{HeaderName, HeaderValue, header::AUTHORIZATION};
 use axum_extra::headers::{
     Authorization, Error, Header,
-    authorization::{Basic, Bearer, Credentials},
+    authorization::{Basic, Credentials},
 };
-use parking_lot::RwLockReadGuard;
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum AnyAuth {
-    Bearer(Authorization<Bearer>),
     Basic(Authorization<Basic>),
     None,
 }
@@ -17,7 +15,6 @@ pub enum AnyAuth {
 impl AnyAuth {
     pub fn encode(&self) -> HeaderValue {
         match self {
-            Self::Bearer(bearer) => bearer.0.encode(),
             Self::Basic(basic) => basic.0.encode(),
             Self::None => unreachable!(),
         }
@@ -25,18 +22,13 @@ impl AnyAuth {
 
     pub fn scheme(&self) -> &'static str {
         match self {
-            Self::Bearer(_) => Bearer::SCHEME,
             Self::Basic(_) => Basic::SCHEME,
             Self::None => unreachable!(),
         }
     }
 
-    pub async fn get_token<'a>(
-        &self,
-        cx: &RwLockReadGuard<'a, RouteContextInner>,
-    ) -> Result<MavenToken> {
+    pub async fn get_token(&self, cx: &RouteContext) -> Result<MavenToken> {
         match self {
-            Self::Bearer(bearer) => cx.get_token_by_value(bearer.token()).await,
             Self::Basic(basic) => cx.get_token(basic.username(), basic.password()).await,
             Self::None => Err(anyhow!("A token is required!")),
         }
@@ -49,17 +41,14 @@ impl Header for AnyAuth {
     }
 
     fn decode<'i, I: Iterator<Item = &'i HeaderValue>>(values: &mut I) -> Result<Self, Error> {
+        debug!("Decoding auth header...");
+
         values
             .next()
             .and_then(|val| {
                 let slice = val.as_bytes();
 
-                if slice.len() > Bearer::SCHEME.len()
-                    && slice[Bearer::SCHEME.len()] == b' '
-                    && slice[..Bearer::SCHEME.len()].eq_ignore_ascii_case(Bearer::SCHEME.as_bytes())
-                {
-                    Bearer::decode(val).map(Authorization).map(AnyAuth::Bearer)
-                } else if slice.len() > Basic::SCHEME.len()
+                if slice.len() > Basic::SCHEME.len()
                     && slice[Basic::SCHEME.len()] == b' '
                     && slice[..Basic::SCHEME.len()].eq_ignore_ascii_case(Basic::SCHEME.as_bytes())
                 {

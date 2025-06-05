@@ -4,3 +4,8 @@ maven_storage
 flamegraph.svg
 perf.*
 profile.json.gz
+out
+/*.py
+.env
+dump.sql
+seed.sql

@@ -1,0 +1,7 @@
+{
+    "svg.preview.background": "dark-transparent",
+    "clangd.fallbackFlags": [
+        "-I${workspaceFolder}/argonautica/phc-winner-argon2/src",
+        "-I${workspaceFolder}/argonautica/phc-winner-argon2/include"
+    ]
+}

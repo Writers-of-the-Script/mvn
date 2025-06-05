@@ -73,6 +73,25 @@
             thead > tr > td {
                 border-bottom: 1px solid white;
             }
+
+            .docs-icon {
+                width: 24px;
+                height: 24px;
+                margin-left: 0.5rem;
+                cursor: pointer;
+            }
+
+            .docs-icon svg {
+                width: 24px;
+                height: 24px;
+            }
+
+            .file-name {
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                justify-content: start;
+            }
         </style>
     </head>
     <body>
@@ -107,7 +126,14 @@
 
                 {% for file in files %}
                     <tr>
-                        <td><a href="{{ path }}{{ file.name }}">{{ file.name }}</a></td>
+                        <td class="file-name">
+                            <a href="{{ path }}{{ file.name }}">{{ file.name }}</a>
+
+                            {% if let Some(docs) = file.docs %}
+                                <a href="/docs/{{ docs }}{{ path }}raw/" class="docs-icon">{% include "docs.svg" %}</a>
+                            {% endif %}
+                        </td>
+                        
                         <td>{{ file.type_str }}</td>
                         <td>{{ file.size_str }}</td>
                         <td>{{ file.updated }}</td>

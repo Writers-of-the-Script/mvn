@@ -1,5 +1,5 @@
 DROP TABLE IF EXISTS files;
 DROP TABLE IF EXISTS deleted_files;
-DROP TABLE IF EXISTS tokens;
 DROP TABLE IF EXISTS token_paths;
+DROP TABLE IF EXISTS tokens;
 DROP TABLE IF EXISTS master_keys;

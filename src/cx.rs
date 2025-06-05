@@ -1,39 +1,28 @@
 use crate::db::DbPool;
 use anyhow::Result;
+use axum::body::Body;
+use tokio::sync::mpsc::UnboundedSender;
 use object_store::local::LocalFileSystem;
-use parking_lot::RwLock;
-use std::{collections::HashMap, fs, path::PathBuf, sync::Arc};
+use std::{fs, path::PathBuf, sync::Arc};
 
-pub type RouteContext = Arc<RwLock<RouteContextInner>>;
-
-pub struct RouteContextInner {
+pub struct RouteContext {
     pub storage: Arc<LocalFileSystem>,
     pub pool: DbPool,
-    pub dirs: Vec<String>,
-    pub dir_entries: HashMap<String, Vec<String>>,
+    pub tx: UnboundedSender<(Body, String)>,
 }
 
-impl RouteContextInner {
-    pub async fn create(storage_path: Option<PathBuf>, conn: DbPool) -> Result<RouteContext> {
-        Ok(Arc::new(RwLock::new(Self::new(storage_path, conn).await?)))
-    }
-
-    async fn new(storage_path: Option<PathBuf>, conn: DbPool) -> Result<Self> {
+impl RouteContext {
+    pub async fn create(storage_path: Option<PathBuf>, conn: DbPool, tx: UnboundedSender<(Body, String)>) -> Result<Self> {
         let storage_path = storage_path.unwrap_or(PathBuf::from("maven_storage"));
 
         if !fs::exists(&storage_path)? {
             fs::create_dir_all(&storage_path)?;
         }
 
-        let mut me = Self {
-            dirs: Vec::new(),
-            dir_entries: HashMap::new(),
+        Ok(Self {
             storage: Arc::new(LocalFileSystem::new_with_prefix(storage_path)?),
             pool: conn,
-        };
-
-        me.index_dirs().await?;
-
-        Ok(me)
+            tx,
+        })
     }
 }

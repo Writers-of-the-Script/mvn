@@ -1,0 +1,114 @@
+[package]
+name = "argonautica"
+version = "0.3.0" # remember to update html_root_url
+edition = "2024"
+
+authors = ["Brian Myers <brian.carl.myers@gmail.com>"]
+categories = ["algorithms", "api-bindings", "authentication", "cryptography"]
+description = "Idiomatic Argon2 password hashing for Rust"
+documentation = "https://docs.rs/argonautica"
+homepage = "https://github.com/bcmyers/argonautica"
+keywords = ["argon2", "cryptography", "hash", "password", "security"]
+license = "MIT/Apache-2.0"
+publish = true
+readme = "README.md"
+repository = "https://github.com/bcmyers/argonautica"
+
+build = "build.rs"
+links = "argon2"
+
+[lib]
+name = "argonautica"
+path = "src/lib.rs"
+crate-type = ["lib"]
+
+[features]
+benches = ["argon2rs", "criterion", "md5", "rust-argon2", "sha2"]
+simd = []
+development = []
+
+[dependencies]
+anyhow = "1.0.98"
+base64 = "0.22.1"
+bitflags = "2.9.1"
+futures = "0.3"
+libc = "0.2"
+log = "0.4"
+nom = "8.0"
+num_cpus = "1.17"
+rand = "0.9"
+scopeguard = "1.2"
+serde = { version = "1.0", optional = true, features = ["derive"] }
+
+# benches
+argon2rs = { version = "0.2.5", optional = true }
+criterion = { version = "0.6", optional = true }
+md5 = { version = "0.7", optional = true }
+rust-argon2 = { version = "2.1.0", optional = true }
+sha2 = { version = "0.10.9", optional = true }
+tokio = { version = "1.45.1", features = ["rt"] }
+thiserror = "2.0.12"
+
+[build-dependencies]
+bindgen = "0.71.1"
+cfg-if = "1.0.0"
+cc = { version = "1.2.25", features = ["parallel"] }
+tempfile = "3.20"
+anyhow = "1.0.98"
+
+[dev-dependencies]
+dotenv = "0.15"
+lazy_static = "1.5"
+serde_json = "1.0"
+
+[[bench]]
+name = "bench_crates"
+harness = false
+required-features = ["benches"]
+
+[[bench]]
+name = "bench_fast_but_insecure"
+harness = false
+required-features = ["benches"]
+
+[[bench]]
+name = "bench_inputs"
+harness = false
+required-features = ["benches"]
+
+[[bench]]
+name = "bench_threads"
+harness = false
+required-features = ["benches"]
+
+[[example]]
+name = "calibrate_timing"
+path = "examples/calibrate_timing.rs"
+
+[[example]]
+name = "example_custom"
+path = "examples/example_custom.rs"
+
+[[example]]
+name = "example_non_blocking"
+path = "examples/example_non_blocking.rs"
+
+[[example]]
+name = "example_serde"
+path = "examples/example_serde.rs"
+required-features = ["serde"]
+
+[[example]]
+name = "example_simple"
+path = "examples/example_simple.rs"
+
+[[example]]
+name = "example_very_simple"
+path = "examples/example_very_simple.rs"
+
+[[example]]
+name = "generate_secret_key"
+path = "examples/generate_secret_key.rs"
+
+[badges]
+travis-ci = { repository = "bcmyers/argonautica", branch = "master" }

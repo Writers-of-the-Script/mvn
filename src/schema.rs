@@ -2,9 +2,9 @@
 
 diesel::table! {
     deleted_files (id) {
-        id -> Integer,
+        id -> Int4,
         path -> Text,
-        size -> BigInt,
+        size -> Int8,
         uploaded -> Timestamp,
         deleted -> Timestamp,
         md5 -> Text,
@@ -18,9 +18,9 @@ diesel::table! {
 
 diesel::table! {
     files (id) {
-        id -> Integer,
+        id -> Int4,
         path -> Text,
-        size -> BigInt,
+        size -> Int8,
         uploaded -> Timestamp,
         md5 -> Text,
         sha1 -> Text,
@@ -33,7 +33,7 @@ diesel::table! {
 
 diesel::table! {
     master_keys (id) {
-        id -> Integer,
+        id -> Int4,
         value -> Text,
         created -> Timestamp,
         is_init -> Bool,
@@ -41,18 +41,27 @@ diesel::table! {
 }
 
 diesel::table! {
+    route_data (id) {
+        id -> Int4,
+        path -> Text,
+        visibility -> Int2,
+        created -> Timestamp,
+    }
+}
+
+diesel::table! {
     token_paths (id) {
-        id -> Integer,
-        token -> Integer,
+        id -> Int4,
+        token -> Int4,
         path -> Text,
         added -> Timestamp,
-        permission -> SmallInt,
+        permission -> Int2,
     }
 }
 
 diesel::table! {
     tokens (id) {
-        id -> Integer,
+        id -> Int4,
         name -> Text,
         value -> Text,
         created -> Timestamp,
@@ -65,6 +74,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     deleted_files,
     files,
     master_keys,
+    route_data,
     token_paths,
     tokens,
 );

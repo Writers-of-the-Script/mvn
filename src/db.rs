@@ -1,18 +1,20 @@
 use anyhow::{Error, Result, anyhow};
-use diesel::{SqliteConnection, sqlite::Sqlite};
+use diesel::{ConnectionError, ConnectionResult, backend::Backend};
 use diesel_async::{
-    AsyncConnection,
+    AsyncConnection, AsyncPgConnection,
     async_connection_wrapper::AsyncConnectionWrapper,
     pooled_connection::{
-        AsyncDieselConnectionManager,
+        AsyncDieselConnectionManager, ManagerConfig, RecyclingMethod,
         deadpool::{Object, Pool},
     },
-    sync_connection_wrapper::SyncConnectionWrapper,
 };
 use diesel_migrations::{EmbeddedMigrations, MigrationHarness, embed_migrations};
+use futures_util::{FutureExt, future::BoxFuture};
+use rustls::ClientConfig;
+use rustls_platform_verifier::ConfigVerifierExt;
 use std::env;
 
-pub type DbConn = SyncConnectionWrapper<SqliteConnection>;
+pub type DbConn = AsyncPgConnection;
 pub type DbPool = Pool<DbConn>;
 pub type PoolConn = Object<DbConn>;
 
@@ -23,7 +25,35 @@ pub fn connect(url: Option<String>) -> Result<DbPool> {
         .or(env::var("DATABASE_URL").ok())
         .ok_or(anyhow!("Could not get a database URL!"))?;
 
-    Ok(Pool::builder(AsyncDieselConnectionManager::<DbConn>::new(url)).build()?)
+    let mut config = ManagerConfig::default();
+
+    config.custom_setup = Box::new(establish_connection);
+    config.recycling_method = RecyclingMethod::Verified;
+
+    Ok(Pool::builder(AsyncDieselConnectionManager::new_with_config(url, config)).build()?)
+}
+
+pub async fn connect_single(url: Option<String>) -> Result<DbConn> {
+    let url = url
+        .or(env::var("DATABASE_URL").ok())
+        .ok_or(anyhow!("Could not get a database URL!"))?;
+
+    Ok(establish_connection(&url).await?)
+}
+
+fn establish_connection(config: &str) -> BoxFuture<ConnectionResult<AsyncPgConnection>> {
+    let fut = async {
+        let rustls_config = ClientConfig::with_platform_verifier().unwrap();
+        let tls = tokio_postgres_rustls::MakeRustlsConnect::new(rustls_config);
+
+        let (client, conn) = tokio_postgres::connect(config, tls)
+            .await
+            .map_err(|e| ConnectionError::BadConnection(e.to_string()))?;
+
+        AsyncPgConnection::try_from_client_and_connection(client, conn).await
+    };
+
+    fut.boxed()
 }
 
 pub async fn migrate(pool: &DbPool) -> Result<()> {
@@ -32,12 +62,14 @@ pub async fn migrate(pool: &DbPool) -> Result<()> {
     Ok(())
 }
 
-async fn run_migrations<A>(async_connection: A, migrations: EmbeddedMigrations) -> Result<()>
+async fn run_migrations<A: AsyncConnection<Backend = B> + 'static, B: Backend>(
+    conn: A,
+    migrations: EmbeddedMigrations,
+) -> Result<()>
 where
-    A: AsyncConnection<Backend = Sqlite> + 'static,
+    AsyncConnectionWrapper<A>: MigrationHarness<B>,
 {
-    let mut async_wrapper: AsyncConnectionWrapper<A> =
-        AsyncConnectionWrapper::from(async_connection);
+    let mut async_wrapper: AsyncConnectionWrapper<A> = AsyncConnectionWrapper::from(conn);
 
     tokio::task::spawn_blocking(move || {
         async_wrapper.run_pending_migrations(migrations).unwrap();

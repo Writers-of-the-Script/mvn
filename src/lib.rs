@@ -1,4 +1,4 @@
-#![feature(let_chains)]
+#![feature(let_chains, type_alias_impl_trait)]
 
 #[macro_use]
 extern crate diesel;
@@ -6,16 +6,19 @@ extern crate diesel;
 #[macro_use]
 extern crate serde;
 
-pub mod assets;
+#[macro_use]
+extern crate tracing;
+
 pub mod auth;
+pub mod cli;
 pub mod cx;
 pub mod db;
-pub mod docs;
 pub mod err;
 pub mod files;
-pub mod logging;
+pub mod queue;
 pub mod router;
 pub mod run;
 pub mod schema;
-pub mod templates;
+pub mod seed;
 pub mod tokens;
+pub mod util;

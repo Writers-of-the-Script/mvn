@@ -1,0 +1,183 @@
+use thiserror::Error;
+
+/// Enum representing the various kinds of errors
+#[derive(Error, Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
+pub enum ErrorKind {
+    /// Additional data too long. Length in bytes must be less than 2^32
+    #[error("Additional data too long. Length in bytes must be less than 2^32")]
+    AdditionalDataTooLongError,
+
+    /// Backend encode error. u32 provided could not be encoded into a Backend
+    #[error("Backend encode error. u32 provided could not be encoded into a Backend")]
+    BackendEncodeError,
+
+    /// Rust backend not yet supported. Please use the C backend
+    #[error("Rust backend not yet supported. Please use the C backend")]
+    BackendUnsupportedError,
+
+    /// Base64 decode error. Bytes provided were invalid base64
+    #[error("Base64 decode error. Bytes provided were invalid base64")]
+    Base64DecodeError,
+
+    /// This is a bug in the argonautica crate and should be unreachable. Please file an issue
+    #[error(
+        "This is a bug in the argonautica crate and should be unreachable. Please file an issue"
+    )]
+    Bug,
+
+    /// Hash decode error. Hash provided was invalid
+    #[error("Hash decode error. Hash provided was invalid")]
+    HashDecodeError,
+
+    #[cfg(test)]
+    /// Hash encode error. HashRaw provided could not be encoded into a hash
+    #[error("Hash encode error. HashRaw provided could not be encoded into a hash")]
+    HashEncodeError,
+
+    /// Hash length too short. Hash length must be at least 4
+    #[error("Hash length too short. Hash length must be at least 4")]
+    HashLenTooShortError,
+
+    /// Hash missing. Attempted to verify without first having provided a hash
+    #[error("Hash missing. Attempted to verify without first having provided a hash")]
+    HashMissingError,
+
+    /// Iterations too few. Iterations must be greater than 0
+    #[error("Iterations must be greater than 0")]
+    IterationsTooFewError,
+
+    /// Lanes too few. Lanes must be greater than 0
+    #[error("Lanes must be greater than 0")]
+    LanesTooFewError,
+
+    /// Lanes too many. Lanes must be less than 2^24
+    #[error("Lanes must be less than 2^24")]
+    LanesTooManyError,
+
+    /// C code attempted to allocate memory (using malloc) and failed
+    #[error("C code attempted to allocate memory (using malloc) and failed")]
+    MemoryAllocationError,
+
+    /// Memory size invalid. Memory size must be a power of two
+    #[error("Memory size invalid. Memory size must be a power of two")]
+    MemorySizeInvalidError,
+
+    /// Memory size too small. Memory size must be at least 8 times the number of lanes
+    #[error(
+        "Memory size too small. Memory size must be at least 8 times the number of lanes"
+    )]
+    MemorySizeTooSmallError,
+
+    /// Failed to access OS random number generator
+    #[error("Failed to access OS random number generator")]
+    OsRngError,
+
+    /// Password immutable error. You attempted to hash or verify with an immutable password and password_clearing set to true, which is not possible because with an immutable password argonautica cannot zero out the password bytes. To prevent this error, either pass Hasher or Verifier a mutable password or set password_clearing to false
+    #[error(
+        "Password immutable error. You attempted to hash or verify with an immutable password and password_clearing set to true, which is not possible because with an immutable password argonautica cannot zero out the password bytes. To prevent this error, either pass Hasher or Verifier a mutable password or set password_clearing to false"
+    )]
+    PasswordImmutableError,
+
+    /// Password missing. Attempted to verify without first having provided a password
+    #[error(
+        "Password missing. Attempted to verify without first having provided a password"
+    )]
+    PasswordMissingError,
+
+    /// Password too long. Length in bytes must be less than 2^32
+    #[error("Password too long. Length in bytes must be less than 2^32")]
+    PasswordTooLongError,
+
+    /// Password too short. Length in bytes must be greater than 0
+    #[error("Password too short. Length in bytes must be greater than 0")]
+    PasswordTooShortError,
+
+    /// Salt too long. Length in bytes must be less than 2^32
+    #[error("Salt too long. Length in bytes must be less than 2^32")]
+    SaltTooLongError,
+
+    /// Salt too short. Length in bytes must be at least 8
+    #[error("Salt too short. Length in bytes must be at least 8")]
+    SaltTooShortError,
+
+    /// Secret key immutable error. You attempted to hash or verify with an immutable secret key and secret_key_clearing set to true, which is not possible because with an immutable secret key argonautica cannot zero out the secret key bytes. To prevent this error, either pass Hasher or Verifier a mutable secret key or set secret_key_clearing to false
+    #[error(
+        "Secret key immutable error. You attempted to hash or verify with an immutable secret key and secret_key_clearing set to true, which is not possible because with an immutable secret key argonautica cannot zero out the secret key bytes. To prevent this error, either pass Hasher or Verifier a mutable secret key or set secret_key_clearing to false"
+    )]
+    SecretKeyImmutableError,
+
+    /// Secret key missing. Attempted to hash without a secret key without having first opted out of using a secret key
+    #[error(
+        "Secret key missing. Attempted to hash without a secret key without having first opted out of using a secret key"
+    )]
+    SecretKeyMissingError,
+
+    /// Secret key too long. Length in bytes must be less than 2^32
+    #[error("Secret key too long. Length in bytes must be less than 2^32")]
+    SecretKeyTooLongError,
+
+    /// C code reported a "Threading failure" error
+    #[error("C code reported a \"Threading failure\" error")]
+    ThreadError,
+
+    /// Threads too few. Threads must be greater than 0
+    #[error("Threads too few. Threads must be greater than 0")]
+    ThreadsTooFewError,
+
+    /// Threads too many. Threads must be less than 2^24
+    #[error("Threads too many. Threads must be less than 2^24")]
+    ThreadsTooManyError,
+
+    /// Utf-8 encode error. Bytes provided could not be encoded into utf-8
+    #[error("Utf-8 encode error. Bytes provided could not be encoded into utf-8")]
+    Utf8EncodeError,
+
+    /// Variant encode error. &str provided could not be encoded into a Variant
+    #[error("Variant encode error. &str provided could not be encoded into a Variant")]
+    VariantEncodeError,
+
+    /// Version encode error. &str or u32 provided could not be encoded into a Version
+    #[error(
+        "Version encode error. &str or u32 provided could not be encoded into a Version"
+    )]
+    VersionEncodeError,
+
+    #[doc(hidden)]
+    #[error("__Nonexaustive variant")]
+    __Nonexhaustive,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_send() {
+        fn assert_send<T: Send>() {}
+        assert_send::<ErrorKind>();
+    }
+
+    #[test]
+    fn test_sync() {
+        fn assert_sync<T: Sync>() {}
+        assert_sync::<ErrorKind>();
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn test_serialize() {
+        use serde;
+        fn assert_serialize<T: serde::Serialize>() {}
+        assert_serialize::<ErrorKind>();
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn test_deserialize() {
+        use serde;
+        fn assert_deserialize<'de, T: serde::Deserialize<'de>>() {}
+        assert_deserialize::<ErrorKind>();
+    }
+}

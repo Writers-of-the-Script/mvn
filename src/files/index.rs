@@ -1,14 +1,30 @@
-use crate::cx::RouteContextInner;
+use crate::cx::RouteContext;
 use anyhow::Result;
+use chashmap::CHashMap;
+use diesel::pg::Pg;
+use diesel_async::AsyncConnection;
+use once_cell::sync::Lazy;
 use std::collections::HashMap;
 
-impl RouteContextInner {
-    pub async fn index_dirs(&mut self) -> Result<()> {
-        self.dirs = vec!["/".into()];
-        self.dir_entries = HashMap::new();
-        self.dir_entries.insert("/".into(), Vec::new());
+static DIR_ENTRIES: Lazy<CHashMap<String, Vec<String>>> = Lazy::new(CHashMap::new);
 
-        for (key, file) in &self.get_all_files().await? {
+impl RouteContext {
+    pub fn index(&self) -> &CHashMap<String, Vec<String>> {
+        &*DIR_ENTRIES
+    }
+
+    pub async fn index_dirs(&self, conn: &mut impl AsyncConnection<Backend = Pg>) -> Result<()> {
+        debug!("Resetting index...");
+
+        let mut map = HashMap::new();
+
+        map.insert("/".into(), Vec::new());
+
+        debug!("Fetching files from database...");
+
+        for (key, file) in &self.get_all_files_inner(conn).await? {
+            debug!("Process: {key}");
+
             let mut parts = key.split("/").map(|v| v.to_string()).collect::<Vec<_>>();
 
             parts.pop();
@@ -20,12 +36,10 @@ impl RouteContextInner {
 
                 let cur = format!("/{}/", current.join("/")).replace("//", "/");
 
-                if !self.dirs.contains(&cur) {
-                    self.dirs.push(cur.clone());
-                }
+                debug!("Inserting if needed: {cur}");
 
-                if !self.dir_entries.contains_key(&cur) {
-                    self.dir_entries.insert(cur.clone(), Vec::new());
+                if !map.contains_key(&cur) {
+                    map.insert(cur.clone(), Vec::new());
                 }
 
                 let mut parent_list = current.clone();
@@ -33,7 +47,7 @@ impl RouteContextInner {
                 parent_list.pop();
 
                 let parent = format!("/{}/", parent_list.join("/")).replace("//", "/");
-                let entries = self.dir_entries.get_mut(&parent).unwrap();
+                let entries = map.get_mut(&parent).unwrap();
 
                 if !entries.contains(&cur) && cur != "/" {
                     entries.push(cur);
@@ -41,7 +55,10 @@ impl RouteContextInner {
             }
 
             let parent = format!("/{}/", parts.join("/")).replace("//", "/");
-            let entries = self.dir_entries.get_mut(&parent).unwrap();
+
+            debug!("Inserting hash routes for {parent}...");
+
+            let entries = map.get_mut(&parent).unwrap();
 
             for route in file.routes() {
                 let route = route.split("/").last().unwrap().into();
@@ -52,19 +69,12 @@ impl RouteContextInner {
             }
         }
 
-        Ok(())
-    }
+        DIR_ENTRIES.clear();
 
-    pub fn get_path(&self, route: impl AsRef<str>) -> String {
-        format!(
-            "/{}",
-            route
-                .as_ref()
-                .trim_end_matches(".md5")
-                .trim_end_matches(".sha1")
-                .trim_end_matches(".sha256")
-                .trim_end_matches(".sha512")
-        )
-        .replace("//", "/")
+        for (k, v) in map {
+            DIR_ENTRIES.insert_new(k, v);
+        }
+
+        Ok(())
     }
 }
