@@ -41,7 +41,7 @@ pub async fn connect_single(url: Option<String>) -> Result<DbConn> {
     Ok(establish_connection(&url).await?)
 }
 
-fn establish_connection(config: &str) -> BoxFuture<ConnectionResult<AsyncPgConnection>> {
+fn establish_connection(config: &'_ str) -> BoxFuture<'_, ConnectionResult<AsyncPgConnection>> {
     let fut = async {
         let rustls_config = ClientConfig::with_platform_verifier().unwrap();
         let tls = tokio_postgres_rustls::MakeRustlsConnect::new(rustls_config);

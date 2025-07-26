@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres
+    restart: always
+    shm_size: 128mb
+    environment:
+      POSTGRES_USER: mvn
+      POSTGRES_PASSWORD: mvn
+      POSTGRES_DB: mvn
+    ports:
+      - 5432:5432
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+volumes:
+  db-data:

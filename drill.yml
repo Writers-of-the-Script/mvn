@@ -1,0 +1,10 @@
+---
+base: 'http://0.0.0.0:4000'
+iterations: 10000
+concurrency: 5
+rampup: 2
+
+plan:
+  - name: Test
+    request:
+      url: /
