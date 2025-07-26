@@ -1,6 +1,20 @@
 use chrono::NaiveDateTime;
 
-#[derive(Debug, Clone, Serialize, Deserialize, Insertable, Identifiable, Queryable, Selectable)]
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Hash,
+    Serialize,
+    Deserialize,
+    Insertable,
+    Identifiable,
+    Queryable,
+    Selectable,
+)]
 #[diesel(table_name = crate::schema::tokens)]
 pub struct MavenToken {
     pub id: i32,

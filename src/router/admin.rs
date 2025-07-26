@@ -1,11 +1,18 @@
 use std::sync::Arc;
 
 use super::models::{RouteData, RouteDataIn};
-use crate::{auth::AnyAuth, cx::RouteContext, err::AxumResponse, schema::route_data};
+use crate::{
+    auth::AnyAuth,
+    cx::RouteContext,
+    err::AxumResponse,
+    router::{dash::AdminDashboard, request::DashboardQuery, stats::InstanceStats},
+    schema::route_data,
+};
 use anyhow::anyhow;
+use askama::Template;
 use axum::{
     Json,
-    extract::State,
+    extract::{Query, State},
     http::header::{CONTENT_TYPE, LOCATION, WWW_AUTHENTICATE},
     response::Response,
 };
@@ -76,4 +83,38 @@ pub async fn auth_route(
     } else {
         err
     }
+}
+
+#[axum::debug_handler]
+pub async fn stats_route(
+    State(cx): State<Arc<RouteContext>>,
+    AuthBearer(key): AuthBearer,
+) -> Result<Json<InstanceStats>, Response> {
+    if !cx.validate_master_key(key).await.into_axum()? {
+        return Err(anyhow!("Invalid token!")).into_axum();
+    }
+
+    Ok(Json(cx.stats().await.into_axum()?))
+}
+
+#[axum::debug_handler]
+pub async fn admin_dashboard_route(
+    State(cx): State<Arc<RouteContext>>,
+    Query(query): Query<DashboardQuery>,
+) -> Result<Response, Response> {
+    if !cx.validate_master_key(&query.key).await.into_axum()? {
+        return Err(anyhow!("Invalid token!")).into_axum();
+    }
+
+    Ok(Response::builder()
+        .status(200)
+        .body(
+            AdminDashboard::get(query.key, &cx)
+                .await
+                .into_axum()?
+                .render()
+                .into_axum()?
+                .into(),
+        )
+        .into_axum()?)
 }

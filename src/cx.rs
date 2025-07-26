@@ -1,6 +1,7 @@
 use crate::{db::DbPool, s3::S3Config};
 use anyhow::Result;
 use axum::body::Body;
+use chrono::{DateTime, Utc};
 use object_store::aws::{AmazonS3, AmazonS3Builder};
 use std::sync::Arc;
 use tokio::sync::mpsc::UnboundedSender;
@@ -9,6 +10,7 @@ pub struct RouteContext {
     pub storage: Arc<AmazonS3>,
     pub pool: DbPool,
     pub tx: UnboundedSender<(Body, String)>,
+    pub start_time: DateTime<Utc>,
 }
 
 impl RouteContext {
@@ -35,6 +37,7 @@ impl RouteContext {
             storage: Arc::new(builder.build()?),
             pool: conn,
             tx,
+            start_time: Utc::now(),
         })
     }
 }

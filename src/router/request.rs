@@ -7,10 +7,26 @@ pub struct AddTokenRouteData {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TokenInfoRouteData {
+    pub name: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DashboardQuery {
+    pub key: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AddPathRouteData {
     pub token_name: String,
     pub path: String,
     pub permission: MavenTokenPermissions,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RemovePathRouteData {
+    pub token_name: String,
+    pub path: String,
 }
 
 impl Into<MavenTokenIn> for AddTokenRouteData {

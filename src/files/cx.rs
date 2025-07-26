@@ -1,10 +1,12 @@
 use super::{hashes::HASH_TYPES, models::MavenFile, models_in::MavenFileIn};
 use crate::{
     cx::RouteContext,
-    schema::files,
+    router::stats::InstanceStats,
+    schema::{files, tokens},
 };
 use anyhow::{Result, anyhow};
 use axum::body::Body;
+use chrono::Utc;
 use diesel::{ExpressionMethods, QueryDsl, SelectableHelper, delete, insert_into, pg::Pg};
 use diesel_async::{AsyncConnection, RunQueryDsl};
 use object_store::{ObjectStore, PutPayload};
@@ -170,5 +172,49 @@ impl RouteContext {
 
     pub fn queue_upload(&self, body: Body, path: impl AsRef<str>) {
         self.tx.send((body, path.as_ref().into())).unwrap();
+    }
+
+    pub async fn num_files(&self) -> Result<u64> {
+        Ok(files::table
+            .count()
+            .get_result::<i64>(&mut self.pool.get().await?)
+            .await? as u64)
+    }
+
+    pub async fn num_tokens(&self) -> Result<u64> {
+        Ok(tokens::table
+            .count()
+            .get_result::<i64>(&mut self.pool.get().await?)
+            .await? as u64)
+    }
+
+    pub fn num_folders(&self) -> u64 {
+        self.index().len() as u64
+    }
+
+    pub fn uptime(&self) -> (u64, String) {
+        let time = Utc::now() - self.start_time;
+        let secs = time.num_seconds() as u64;
+        let mins = (secs - (secs % 60)) / 60;
+        let secs = secs % 60;
+        let hours = (mins - (mins % 60)) / 60;
+        let mins = mins % 60;
+
+        (
+            time.num_milliseconds() as u64,
+            format!("{hours}h{mins}m{secs}s"),
+        )
+    }
+
+    pub async fn stats(&self) -> Result<InstanceStats> {
+        let (uptime_ms, uptime_str) = self.uptime();
+
+        Ok(InstanceStats {
+            uptime_ms,
+            uptime_str,
+            folders: self.num_folders(),
+            files: self.num_files().await?,
+            tokens: self.num_tokens().await?,
+        })
     }
 }

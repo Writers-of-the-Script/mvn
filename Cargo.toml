@@ -15,11 +15,11 @@ axum-auth = "0.8.1"
 axum-extra = { version = "0.10.1", features = ["typed-header"] }
 chashmap = "2.2.2"
 chrono = { version = "0.4.41", features = ["pure-rust-locales", "serde"] }
-clap = { version = "4.5.39", features = ["derive", "env"] }
+clap = { version = "4.5.41", features = ["derive", "env"] }
 colored = "3.0.0"
 crossbeam-channel = "0.5.15"
-diesel = { version = "2.2.10", features = ["postgres", "chrono"] }
-diesel-async = { version = "0.5.2", features = ["async-connection-wrapper", "deadpool", "postgres", "tokio"] }
+diesel = { version = "2.2.12", features = ["postgres", "chrono"] }
+diesel-async = { version = "0.6.1", features = ["async-connection-wrapper", "deadpool", "postgres", "tokio"] }
 diesel_migrations = { version = "2.2.0", features = ["postgres"] }
 dotenvy = "0.15.7"
 futures-util = "0.3.31"
@@ -27,27 +27,27 @@ http-body-util = "0.1.3"
 humansize = "2.1.3"
 infer = "0.19.0"
 itertools = "0.14.0"
-md5 = "0.7.0"
+md5 = "0.8.0"
 object_store = { version = "0.12.3", features = ["aws"] }
 once_cell = "1.21.3"
-phf = { version = "0.11.3", features = ["macros"] }
+phf = { version = "0.12.1", features = ["macros"] }
 pq-sys = { version = "0.6", features = ["bundled"] }
-rand = "0.9.1"
+rand = "0.9.2"
 random-string = "1.1.0"
 rustls = { version = "0.23.29", features = ["ring"] }
 rustls-platform-verifier = "0.6.0"
 serde = { version = "1.0.219", features = ["derive"] }
-serde_json = "1.0.140"
+serde_json = "1.0.141"
 sha1 = "0.10.6"
 sha2 = "0.10.9"
-tokio = { version = "1.45.0", features = ["full"] }
+tokio = { version = "1.47.0", features = ["full"] }
 tokio-postgres = "0.7.13"
 tokio-postgres-rustls = "0.13.0"
 tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.19", features = ["ansi", "env-filter", "registry"] }
 url = "2.5.4"
 urlencoding = "2.1.3"
-zip = "4.0.0"
+zip = "4.3.0"
 
 [workspace]
 resolver = "2"

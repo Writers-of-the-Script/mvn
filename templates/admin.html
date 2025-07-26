@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Admin Dashboard</title>
+
+        <meta charset="UTF-8" />
+
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta
+            name="description"
+            content="The maven repository's admin dashboard."
+        />
+
+        <meta property="og:title" content="Admin Dashboard" />
+        <meta
+            property="og:description"
+            content="The maven's admin dashboard."
+        />
+
+        <link
+            rel="preload"
+            href="/assets/fonts/jetbrains-mono.woff2"
+            as="font"
+            type="font/woff2"
+        />
+        <link
+            rel="preload"
+            href="/assets/js/page.js"
+            as="script"
+            type="text/javascript"
+        />
+
+        <script defer src="/assets/js/page.js" type="text/javascript"></script>
+
+        <style type="text/css">
+            /* jetbrains-mono-latin-wght-normal */
+            @font-face {
+                font-family: "JetBrains Mono Variable";
+                font-style: normal;
+                font-display: swap;
+                font-weight: 100 800;
+                src: url("/assets/fonts/jetbrains-mono.woff2")
+                    format("woff2-variations");
+                unicode-range:
+                    U+0000-00FF,
+                    U+0131,
+                    U+0152-0153,
+                    U+02BB-02BC,
+                    U+02C6,
+                    U+02DA,
+                    U+02DC,
+                    U+0304,
+                    U+0308,
+                    U+0329,
+                    U+2000-206F,
+                    U+20AC,
+                    U+2122,
+                    U+2191,
+                    U+2193,
+                    U+2212,
+                    U+2215,
+                    U+FEFF,
+                    U+FFFD;
+            }
+
+            html, body {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+                border: none;
+                font-family: "JetBrains Mono Variable";
+                background-color: black;
+                color: white;
+            }
+
+            button {
+                outline: none;
+            }
+
+            body {
+                padding: 0 1rem;
+                width: calc(100% - 2rem);
+            }
+
+            .root {
+                display: flex;
+                flex-direction: column;
+            }
+
+            .stats {
+                display: flex;
+                flex-direction: column;
+                background-color: #111111;
+                padding: 1rem;
+                margin-bottom: 1rem;
+            }
+
+            .stat {
+                display: flex;
+                flex-direction: row;
+                margin: 0;
+                padding: 0.25rem;
+            }
+
+            .stat-name {
+                color: #ba95ff;
+                margin: 0;
+                padding: 0;
+            }
+
+            .stat-value {
+                color: #49ffa7;
+                margin: 0;
+                padding: 0;
+                margin-left: 10px;
+            }
+
+            .tokens {
+                display: flex;
+                flex-direction: column;
+                background-color: #111111;
+                padding: 1rem;
+            }
+
+            .token {
+                display: flex;
+                flex-direction: row;
+                background-color: #222222;
+                padding: 1rem;
+                align-items: center;
+                justify-content: space-between;
+            }
+
+            .token:not(:last-child) {
+                margin-bottom: 1rem;
+            }
+
+            .token-fields {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+                justify-content: center;
+            }
+
+            .token-field {
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                justify-content: flex-start;
+            }
+
+            .token-field.first {
+                margin-bottom: 0.5rem;
+            }
+
+            .token-label {
+                color: #ff8614;
+                margin: 0;
+                padding: 0;
+            }
+
+            .token-value {
+                color: #57cfff;
+                margin: 0;
+                padding: 0;
+                margin-left: 10px;
+
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                justify-content: flex-start;
+            }
+
+            .token-value.hidden {
+                color: transparent;
+                background-color: #444444;
+                cursor: pointer;
+                user-select: none;
+                padding-left: 0.5rem;
+                transition: background-color 0.25s ease;
+            }
+
+            .token-value.hidden:hover {
+                background-color: #505050;
+            }
+
+            .token-value.shown {
+                background-color: #333333;
+                padding-left: 0.5rem;
+            }
+
+            .token-value-copy {
+                background-color: transparent;
+                border: none;
+                padding: 0.25rem;
+                margin: 0;
+                cursor: pointer;
+                transition: background-color 0.25s ease;
+                margin-left: 0.5rem;
+            }
+
+            .token-value-copy:hover {
+                background-color: #555555;
+            }
+
+            .token-value.hidden > .token-value-copy {
+                pointer-events: none;
+                opacity: 0;
+            }
+
+            .token-actions {
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                justify-content: flex-end;
+            }
+
+            .token-action {
+                background-color: transparent;
+                border: none;
+                padding: 0.5rem;
+                margin: 0;
+                cursor: pointer;
+                transition: background-color 0.25s ease;
+            }
+
+            .token-action:hover {
+                background-color: #333333;
+            }
+
+            .token-create {
+                display: flex;
+                flex-direction: row;
+                background-color: #222222;
+                border: none;
+                color: #7bdaff;
+                align-items: center;
+                justify-content: center;
+                width: 6.75rem;
+                font-size: 13pt;
+                font-family: "JetBrains Mono Variable";
+                margin: 0;
+                padding: 0.25rem;
+                cursor: pointer;
+                transition: background-color 0.25s ease;
+            }
+
+            .token-create:hover {
+                background-color: #333333;
+            }
+
+            .token-create > img, .token-create > svg {
+                margin-right: 0.25rem;
+            }
+
+            .new-token-bg {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0, 0, 0, 0.4);
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .new-token-bg.hidden {
+                display: none;
+            }
+
+            .new-token {
+                background-color: #222222;
+                padding: 2rem;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .new-token-input {
+                background-color: #333333;
+                border: 1px solid #333333;
+                padding: 0.5rem;
+                margin: 0.25rem 0;
+                font-size: 11pt;
+                font-family: "JetBrains Mono Variable";
+                color: white;
+                outline: none;
+                width: 20rem;
+            }
+
+            .new-token-submit {
+                background-color: #444444;
+                border: none;
+                margin: 0.75rem;
+                font-family: "JetBrains Mono Variable";
+                font-size: 13pt;
+                color: #eeeeee;
+                padding: 0.5rem 1rem;
+                cursor: pointer;
+                transition: background-color 0.25s ease;
+            }
+
+            .new-token-submit:hover {
+                background-color: #555555;
+            }
+
+            .new-token-input.error {
+                border: 1px solid #ff5252 !important;
+            }
+
+            .new-token-error {
+                padding: 0;
+                margin: 0;
+                font-size: 10pt;
+                width: 95%;
+                margin-bottom: 0.5rem;
+                color: #ff7171;
+            }
+
+            .new-token-error.hidden {
+                display: none;
+            }
+
+            .tokens .title {
+                font-size: 14pt;
+                font-weight: bold;
+                padding: 0;
+                margin: 0;
+                margin-bottom: 1rem;
+            }
+
+            .masters {
+                margin-top: 1rem;
+            }
+
+            .token-field.paths {
+                flex-direction: column;
+                align-items: flex-start;
+                justify-content: flex-start;
+            }
+
+            .token-paths {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+                justify-content: flex-start;
+                padding-left: 1.5rem;
+                padding-top: 0.5rem;
+            }
+
+            .token-path {
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                justify-content: flex-start;
+            }
+
+            .token-path > p {
+                margin: 0;
+                padding: 0;
+            }
+
+            .token-path-route {
+                color: #ff1dbb;
+                padding-left: 0.75rem !important;
+            }
+
+            .token-path-access {
+                color: #f7ea39;
+                padding-left: 0.75rem !important;
+            }
+
+            .token-path-remove {
+                background-color: transparent;
+                margin: 0;
+                padding: 0.3em 0.4em;
+                border: none;
+                font-size: 17pt;
+                color: rgb(255, 70, 70);
+                cursor: pointer;
+                margin-left: 0.5rem;
+            }
+
+            .token-path-remove:hover {
+                background-color: #444444;
+            }
+
+            .token-path-add {
+                display: flex;
+                flex-direction: row;
+                background-color: #333333;
+                border: none;
+                color: #ff75e8;
+                align-items: center;
+                justify-content: center;
+                width: 4.75rem;
+                font-size: 13pt;
+                font-family: "JetBrains Mono Variable";
+                margin: 0;
+                padding: 0.25rem;
+                cursor: pointer;
+                transition: background-color 0.25s ease;
+            }
+
+            .token-path-add:hover {
+                background-color: #444444;
+            }
+
+            .token-path-add > img, .token-path-add > svg {
+                margin-right: 0.25rem;
+            }
+
+            .token-done-field {
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                justify-content: flex-start;
+            }
+
+            .token-done-field-name {
+                color: #ff8614;
+                margin: 0;
+                padding: 0;
+            }
+
+            .token-done-field-value {
+                color: #57cfff;
+                margin: 0;
+                padding: 0;
+                margin-left: 10px;
+
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                justify-content: flex-start;
+            }
+        </style>
+    </head>
+    <body>
+        <h3>Admin Dashboard</h3>
+
+        <div id="new-token-bg" class="new-token-bg hidden">
+            <div class="new-token" id="new-token">
+                <h3>Create Token</h3>
+
+                <input
+                    type="text"
+                    id="token-name"
+                    class="new-token-input"
+                    placeholder="Token name..."
+                />
+                <p class="new-token-error hidden" id="token-name-error"></p>
+
+                <input
+                    type="text"
+                    id="token-value"
+                    class="new-token-input"
+                    placeholder="(Optional) Token value..."
+                />
+
+                <button
+                    type="button"
+                    class="new-token-submit"
+                    onclick="createToken()"
+                >
+                    Create
+                </button>
+            </div>
+        </div>
+
+        <div id="token-done-bg" class="new-token-bg hidden">
+            <div class="new-token" id="new-token">
+                <h3>Token Created!</h3>
+
+                <div class="token-done-field">
+                    <p class="token-done-field-name">Name:</p>
+                    <p class="token-done-field-value" id="token-done-name">
+                        null
+                    </p>
+                </div>
+
+                <div class="token-done-field">
+                    <p class="token-done-field-name">Value:</p>
+
+                    <p class="token-done-field-value" id="token-done-value">
+                        null
+                    </p>
+
+                    <button
+                        type="button"
+                        class="token-value-copy"
+                        onclick="copyNewValue()"
+                    >
+                        <img
+                            src="/admin/assets/copy.svg"
+                            width="20px"
+                            height="20px"
+                        />
+                    </button>
+                </div>
+
+                <button
+                    type="button"
+                    class="new-token-submit"
+                    onclick="window.location.reload()"
+                >
+                    Ok
+                </button>
+            </div>
+        </div>
+
+        <div id="new-path-bg" class="new-token-bg hidden">
+            <div class="new-token" id="new-path">
+                <h3>Add Path</h3>
+
+                <input type="text" style="display: none" id="path-token" />
+
+                <input
+                    type="text"
+                    id="path-route"
+                    class="new-token-input"
+                    placeholder="Route..."
+                />
+
+                <p class="new-token-error hidden" id="path-route-error"></p>
+
+                <select
+                    id="path-access"
+                    class="new-token-input"
+                    placeholder="Access..."
+                    style="cursor: pointer"
+                >
+                    <option value="Read">Read</option>
+                    <option value="Write">Write</option>
+                    <option value="ReadWrite">Read/Write</option>
+                </select>
+
+                <button
+                    type="button"
+                    class="new-token-submit"
+                    onclick="addPath()"
+                >
+                    Add
+                </button>
+            </div>
+        </div>
+
+        <div class="root">
+            <div class="stats">
+                <div class="stat">
+                    <p class="stat-name">Instance Uptime:</p>
+                    <p class="stat-value">{{ stats.uptime_str }}</p>
+                </div>
+
+                <div class="stat">
+                    <p class="stat-name">Folders:</p>
+                    <p class="stat-value">{{ stats.folders }}</p>
+                </div>
+
+                <div class="stat">
+                    <p class="stat-name">Files:</p>
+                    <p class="stat-value">{{ stats.files }}</p>
+                </div>
+
+                <div class="stat">
+                    <p class="stat-name">Tokens:</p>
+                    <p class="stat-value">{{ stats.tokens }}</p>
+                </div>
+            </div>
+
+            <div class="tokens">
+                <p class="title">Tokens</p>
+
+                {% for (token, paths) in tokens %}
+                <div class="token">
+                    <div class="token-fields">
+                        <div class="token-field first">
+                            <p class="token-label">Name:</p>
+                            <p class="token-value">{{ token.name }}</p>
+                        </div>
+
+                        <!-- I kinda forgor that I hash the token's value... so this is useless :P -->
+                        <!-- I'm going to keep the hashing for security's sake. -->
+                        <!-- 
+                                <div class="token-field first">
+                                    <p class="token-label">Value:</p>
+
+                                    <p class="token-value hidden">
+                                        {{ token.value }}
+
+                                        <button
+                                            type="button"
+                                            class="token-value-copy"
+                                            onclick="copy('{{ token.value }}')"
+                                        >
+                                            <img
+                                                src="./copy.svg"
+                                                width="20px"
+                                                height="20px"
+                                            />
+                                        </button>
+                                    </p>
+                                </div>
+                            -->
+
+                        <div class="token-field paths">
+                            <p class="token-label">Paths:</p>
+
+                            <div class="token-paths">
+                                {% for path in paths %}
+                                <div class="token-path">
+                                    <p class="token-path-dash">-</p>
+                                    <p class="token-path-route">{{ path.path }}</p>
+                                    <p class="token-path-access">[{{ path.permission }}]</p>
+
+                                    <button
+                                        type="button"
+                                        class="token-path-remove"
+                                        onclick="removePath('{{ token.name }}', '{{ path.path }}')"
+                                    >
+                                        &#x2715;
+                                    </button>
+                                </div>
+                                {% endfor %}
+
+                                <div class="token-path">
+                                    <button
+                                        type="button"
+                                        class="token-path-add"
+                                        onclick="showNewPathModal('{{ token.name }}')"
+                                    >
+                                        <img
+                                            src="/admin/assets/plus.svg"
+                                            width="20 px"
+                                            height="20px"
+                                        />
+                                        Add
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="token-actions">
+                        <button
+                            type="button"
+                            class="token-action"
+                            onclick="deleteToken('{{ token.name }}')"
+                        >
+                            <img
+                                src="/admin/assets/trash.svg"
+                                width="30px"
+                                height="30px"
+                            />
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+
+                <button
+                    type="button"
+                    class="token-create"
+                    onclick="showCreateTokenModal()"
+                >
+                    <img
+                        src="/admin/assets/plus.svg"
+                        width="25px"
+                        height="25px"
+                    />
+                    Create
+                </button>
+            </div>
+        </div>
+
+        <script>
+            const masterKey = "{{ master_key }}";
+
+            const hidden = document.querySelectorAll(
+                ".token-value.hidden",
+            );
+
+            /**
+             * @returns {HTMLElement}
+             */
+            const byId = (id) => document.getElementById(id);
+
+            /**
+             * @returns {HTMLInputElement}
+             */
+            const getInput = (id) => byId(id);
+
+            const newToken = byId("new-token");
+            const newTokenBg = byId("new-token-bg");
+            const nameInput = getInput("token-name");
+            const valueInput = getInput("token-value");
+            const nameErrOutput = byId("token-name-error");
+
+            const doneBg = byId("token-done-bg");
+            const doneName = byId("token-done-name");
+            const doneValue = byId("token-done-value");
+
+            const newPath = byId("new-path");
+            const newPathBg = byId("new-path-bg");
+            const pathTokenInput = getInput("path-token");
+            const pathRouteInput = getInput("path-route");
+            const pathAccessInput = getInput("path-access");
+            const pathErrOutput = byId("path-route-error");
+
+            for (const el of hidden) {
+                el.addEventListener("click", () => {
+                    el.classList.remove("hidden");
+                    el.classList.add("shown");
+                });
+            }
+
+            newTokenBg.addEventListener("click", (ev) => {
+                if (newToken.contains(ev.target)) return;
+
+                newTokenBg.classList.add("hidden");
+                resetCreateModal(false);
+            });
+
+            function copy(text) {
+                const input = document.createElement("input");
+
+                input.type = "text";
+                input.style.display = "none";
+                input.value = text;
+
+                document.body.appendChild(input);
+
+                input.select();
+                input.setSelectionRange(0, 99999);
+                navigator.clipboard.writeText(input.value);
+            }
+
+            const request = async (url, method, data) => {
+                try {
+                    const res = await fetch(url, {
+                        method,
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization:
+                                `Bearer ${masterKey}`,
+                        },
+                        body: JSON.stringify(data),
+                    });
+
+                    if (!res.ok) {
+                        return `Error: Status code ${res.status} - ${await res
+                            .text()}`;
+                    }
+
+                    return res;
+                } catch (err) {
+                    return err;
+                }
+            };
+
+            const userRequest = async (url, method, data) => {
+                const res = await request(url, method, data);
+
+                if (!(res instanceof Response)) {
+                    alert(res);
+                    return false;
+                }
+
+                return true;
+            };
+
+            async function deleteToken(token) {
+                if (
+                    !await userRequest("/api/token", "DELETE", {
+                        name: token,
+                    })
+                ) return;
+
+                window.location.reload();
+            }
+
+            const resetPathModal = (full) => {
+                pathTokenInput.value = "";
+                pathRouteInput.classList.remove("error");
+                pathAccessInput.classList.remove("error");
+                pathErrOutput.classList.add("hidden");
+                pathErrOutput.innerText = "";
+
+                if (full) {
+                    pathRouteInput.value = "";
+                    pathAccessInput.value = "Read";
+                }
+            };
+
+            function showNewPathModal(token) {
+                resetPathModal(false);
+                pathTokenInput.value = token;
+                newPathBg.classList.remove("hidden");
+            }
+
+            async function addPath() {
+                const token = pathTokenInput.value.trim();
+                const path = pathRouteInput.value.trim();
+                const access = pathAccessInput.value.trim();
+
+                if (token == "" || token == "undefined") {
+                    alert(
+                        "Missing token field! Please try re-opening the modal.",
+                    );
+
+                    return;
+                }
+
+                if (path == "") {
+                    pathRouteInput.classList.add("error");
+                    pathErrOutput.innerText =
+                        "^ Path must not be empty!";
+                    pathErrOutput.classList.remove("hidden");
+
+                    return;
+                }
+
+                if (
+                    !await userRequest("/api/token/paths", "PUT", {
+                        token_name: token,
+                        path,
+                        permission: access,
+                    })
+                ) return;
+
+                resetPathModal(true);
+                window.location.reload();
+            }
+
+            async function removePath(token, path) {
+                if (
+                    !await userRequest("/api/token/paths", "DELETE", {
+                        token_name: token,
+                        path,
+                    })
+                ) return;
+
+                window.location.reload();
+            }
+
+            const resetCreateModal = (full) => {
+                nameInput.classList.remove("error");
+                valueInput.classList.remove("error");
+                nameErrOutput.classList.add("hidden");
+                nameErrOutput.innerText = "";
+
+                if (full) {
+                    nameInput.value = "";
+                    valueInput.value = "";
+                }
+            };
+
+            let createdValue = "";
+
+            async function createToken() {
+                const name = nameInput.value.trim();
+                const value = valueInput.value.trim();
+
+                if (name == "") {
+                    nameInput.classList.add("error");
+                    nameErrOutput.innerText =
+                        "^ Token name must not be empty!";
+                    nameErrOutput.classList.remove("hidden");
+
+                    return;
+                }
+
+                const res = await request("/api/token", "PUT", {
+                    name,
+                    value: value == "" ? null : value,
+                });
+
+                if (!(res instanceof Response)) {
+                    alert(res);
+                    return;
+                }
+
+                const created = await res.json();
+
+                doneName.innerText = created.name;
+                doneValue.innerText = created.value;
+                createdValue = created.value;
+
+                resetCreateModal(true);
+                newTokenBg.classList.add("hidden");
+                doneBg.classList.remove("hidden");
+            }
+
+            function copyNewValue() {
+                copy(createdValue);
+            }
+
+            function showCreateTokenModal() {
+                resetCreateModal(false);
+                newTokenBg.classList.remove("hidden");
+            }
+        </script>
+    </body>
+</html>

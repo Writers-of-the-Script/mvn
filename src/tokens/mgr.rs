@@ -9,7 +9,10 @@ use crate::{
     schema::{master_keys, token_paths, tokens},
 };
 use anyhow::{Result, anyhow};
-use diesel::{BelongingToDsl, ExpressionMethods, QueryDsl, SelectableHelper, insert_into};
+use diesel::{
+    BelongingToDsl, BoolExpressionMethods, ExpressionMethods, QueryDsl, SelectableHelper, delete,
+    insert_into,
+};
 use diesel_async::RunQueryDsl;
 
 impl RouteContext {
@@ -55,6 +58,15 @@ impl RouteContext {
         } else {
             Err(anyhow!("Invalid token!"))
         }
+    }
+
+    pub async fn delete_token(&self, name: impl AsRef<str>) -> Result<()> {
+        delete(tokens::table)
+            .filter(tokens::name.eq(name.as_ref()))
+            .execute(&mut self.pool.get().await?)
+            .await?;
+
+        Ok(())
     }
 
     pub async fn get_token_by_name(&self, name: impl AsRef<str>) -> Result<MavenToken> {
@@ -117,6 +129,35 @@ impl RouteContext {
             .values(create)
             .returning(MavenTokenPath::as_returning())
             .get_result(&mut self.pool.get().await?)
+            .await?)
+    }
+
+    pub async fn remove_token_path(
+        &self,
+        name: impl AsRef<str>,
+        path: impl AsRef<str>,
+    ) -> Result<()> {
+        let token = self.get_token_by_name(name).await?;
+
+        delete(token_paths::table)
+            .filter(
+                token_paths::token
+                    .eq(token.id)
+                    .and(token_paths::path.eq(path.as_ref())),
+            )
+            .execute(&mut self.pool.get().await?)
+            .await?;
+
+        Ok(())
+    }
+
+    pub async fn get_token_paths_by_name(&self, name: impl AsRef<str>) -> Result<Vec<MavenTokenPath>> {
+        let token = self.get_token_by_name(name).await?;
+
+        Ok(token_paths::table
+            .filter(token_paths::token.eq(token.id))
+            .select(MavenTokenPath::as_select())
+            .load(&mut self.pool.get().await?)
             .await?)
     }
 }

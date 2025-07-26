@@ -5,6 +5,7 @@ use crate::{
     auth::AnyAuth,
     cx::RouteContext,
     err::AxumResponse,
+    router::request::{RemovePathRouteData, TokenInfoRouteData},
     tokens::models::{MavenTokenPath, MavenTokenSafe},
 };
 use anyhow::{Result, anyhow};
@@ -21,13 +22,46 @@ pub async fn new_token_route(
     let generated = data.value.is_none();
 
     if !state.validate_master_key(key).await.into_axum()? {
-        Err(anyhow!("Invalid token!")).into_axum()
+        Err(anyhow!("Invalid master key!")).into_axum()
     } else {
         Ok(Json(
             state
                 .create_token(data.into(), generated)
                 .await
                 .into_axum()?,
+        ))
+    }
+}
+
+#[axum::debug_handler]
+pub async fn delete_token_route(
+    State(state): State<Arc<RouteContext>>,
+    AuthBearer(key): AuthBearer,
+    Json(data): Json<TokenInfoRouteData>,
+) -> Result<Response, Response> {
+    if !state.validate_master_key(key).await.into_axum()? {
+        Err(anyhow!("Invalid master key!")).into_axum()
+    } else {
+        state.delete_token(data.name).await.into_axum()?;
+
+        Ok(Response::builder()
+            .status(200)
+            .body("Success".into())
+            .unwrap())
+    }
+}
+
+#[axum::debug_handler]
+pub async fn get_token_paths_route(
+    State(state): State<Arc<RouteContext>>,
+    AuthBearer(key): AuthBearer,
+    Json(data): Json<TokenInfoRouteData>,
+) -> Result<Json<Vec<MavenTokenPath>>, Response> {
+    if !state.validate_master_key(key).await.into_axum()? {
+        Err(anyhow!("Invalid master key!")).into_axum()
+    } else {
+        Ok(Json(
+            state.get_token_paths_by_name(data.name).await.into_axum()?,
         ))
     }
 }
@@ -47,6 +81,27 @@ pub async fn add_path_route(
                 .await
                 .into_axum()?,
         ))
+    }
+}
+
+#[axum::debug_handler]
+pub async fn delete_path_route(
+    State(state): State<Arc<RouteContext>>,
+    AuthBearer(key): AuthBearer,
+    Json(data): Json<RemovePathRouteData>,
+) -> Result<Response, Response> {
+    if !state.validate_master_key(key).await.into_axum()? {
+        Err(anyhow!("Invalid master key!")).into_axum()
+    } else {
+        state
+            .remove_token_path(data.token_name, data.path)
+            .await
+            .into_axum()?;
+
+        Ok(Response::builder()
+            .status(200)
+            .body("Success".into())
+            .unwrap())
     }
 }
 
