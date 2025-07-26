@@ -1,7 +1,6 @@
-use crate::{run::run, tokens::hash::set_secret};
+use crate::{run::run, s3::S3Config, tokens::hash::set_secret};
 use anyhow::Result;
 use clap::Parser;
-use std::path::PathBuf;
 use tracing::level_filters::LevelFilter;
 use tracing_subscriber::{
     EnvFilter, Layer, fmt, layer::SubscriberExt, registry, util::SubscriberInitExt,
@@ -28,13 +27,33 @@ pub struct Cli {
     )]
     pub database_url: String,
 
-    /// The path to the storage directory.
-    #[arg(short, long, env = "STORAGE_PATH", default_value = "maven_storage")]
-    pub storage: PathBuf,
+    // The URL for the S3 instance.
+    #[arg(long, env = "S3_URL", default_value = "None")]
+    pub s3_url: Option<String>,
+
+    /// The S3 region.
+    #[arg(long, env = "S3_REGION", default_value = "us-west-1")]
+    pub s3_region: String,
+
+    /// The S3 bucket to use for storage.
+    #[arg(long, env = "S3_BUCKET", default_value = "mvn")]
+    pub s3_bucket: String,
+
+    /// The ID of the S3 access key.
+    #[arg(long, env = "S3_ACCESS_KEY_ID", default_value = "mvn")]
+    pub s3_access_key_id: String,
+
+    /// The secret for the S3 access key.
+    #[arg(long, env = "S3_ACCESS_KEY_SECRET", default_value = "mvn")]
+    pub s3_access_key_secret: String,
 
     /// The secret for hashing token values.
     #[arg(short = 'S', long, env = "HASHING_SECRET")]
     pub secret: Option<String>,
+
+    /// The master key.
+    #[arg(short = 'M', long, env = "MASTER_KEY")]
+    pub master_key: Option<String>,
 }
 
 impl Cli {
@@ -56,12 +75,26 @@ impl Cli {
         let env = EnvFilter::builder()
             .with_default_directive(LevelFilter::INFO.into())
             .from_env_lossy();
-            // .add_directive("tokio_postgres::connection=warn".parse().unwrap())
-            // .add_directive("tokio_postgres::query=warn".parse().unwrap());
+
+        // .add_directive("tokio_postgres::connection=warn".parse().unwrap())
+        // .add_directive("tokio_postgres::query=warn".parse().unwrap());
 
         registry().with(fmt.with_filter(env)).init();
-
         set_secret(self.secret);
-        run(self.host, self.port, self.database_url, self.storage).await
+
+        run(
+            self.host,
+            self.port,
+            self.database_url,
+            self.master_key,
+            S3Config {
+                region: self.s3_region,
+                bucket: self.s3_bucket,
+                access_key_id: self.s3_access_key_id,
+                access_key_secret: self.s3_access_key_secret,
+                url: self.s3_url,
+            },
+        )
+        .await
     }
 }

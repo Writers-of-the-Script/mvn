@@ -22,3 +22,4 @@ pub mod schema;
 pub mod seed;
 pub mod tokens;
 pub mod util;
+pub mod s3;

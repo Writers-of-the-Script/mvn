@@ -3,15 +3,23 @@ use crate::{
     db::{connect, migrate},
     queue::worker_thread,
     router::build_router,
+    s3::S3Config,
     seed::seed_db,
 };
-use anyhow::Result;
-use tokio::sync::mpsc::unbounded_channel;
-use std::{path::PathBuf, sync::Arc};
+use anyhow::{Result, anyhow};
+use rustls::crypto::ring;
+use std::sync::Arc;
 use tokio::net::TcpListener;
+use tokio::sync::mpsc::unbounded_channel;
 use tracing::info;
 
-pub async fn run(host: impl AsRef<str>, port: u16, db: String, storage: PathBuf) -> Result<()> {
+pub async fn run(host: impl AsRef<str>, port: u16, db: String, master_key: Option<String>, s3: S3Config) -> Result<()> {
+    info!("Initializing rustls...");
+
+    ring::default_provider()
+        .install_default()
+        .map_err(|err| anyhow!("{:?}", err))?;
+
     info!("Connecting to the database...");
 
     let pool = connect(Some(db.clone()))?;
@@ -22,7 +30,7 @@ pub async fn run(host: impl AsRef<str>, port: u16, db: String, storage: PathBuf)
 
     info!("Seeding required data...");
 
-    seed_db(&pool).await?;
+    seed_db(&pool, master_key).await?;
 
     info!("Creating channel...");
 
@@ -30,7 +38,7 @@ pub async fn run(host: impl AsRef<str>, port: u16, db: String, storage: PathBuf)
 
     info!("Building context...");
 
-    let cx = Arc::new(RouteContext::create(Some(storage), pool, tx).await?);
+    let cx = Arc::new(RouteContext::create(s3, pool, tx).await?);
 
     info!("Indexing...");
 

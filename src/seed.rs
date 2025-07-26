@@ -10,14 +10,14 @@ use diesel_async::RunQueryDsl;
 use random_string::charsets::ALPHANUMERIC;
 use tracing::info;
 
-pub async fn seed_db(pool: &DbPool) -> Result<()> {
-    create_default_key(pool).await?;
+pub async fn seed_db(pool: &DbPool, master_key: Option<String>) -> Result<()> {
+    create_default_key(pool, master_key).await?;
     create_default_route_data(pool).await?;
 
     Ok(())
 }
 
-async fn create_default_key(pool: &DbPool) -> Result<()> {
+async fn create_default_key(pool: &DbPool, master_key: Option<String>) -> Result<()> {
     let mut conn = pool.get().await?;
 
     if master_keys::table
@@ -31,15 +31,19 @@ async fn create_default_key(pool: &DbPool) -> Result<()> {
 
         let new = insert_into(master_keys::table)
             .values(MasterKeyIn {
-                value: random_string::generate(32, ALPHANUMERIC),
+                value: master_key
+                    .clone()
+                    .unwrap_or_else(|| random_string::generate(32, ALPHANUMERIC)),
                 is_init: true,
             })
             .returning(MasterKey::as_returning())
             .get_result(&mut conn)
             .await?;
 
-        info!(">> Your master key is: {}", new.value);
-        info!(">> Write it down, it won't be displayed again!");
+        if master_key.is_none() {
+            info!(">> Your master key is: {}", new.value);
+            info!(">> Write it down, it won't be displayed again!");
+        }
     }
 
     Ok(())
