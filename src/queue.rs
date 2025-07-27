@@ -3,18 +3,18 @@
 use crate::cx::RouteContext;
 use anyhow::Result;
 use axum::body::Body;
-use crossbeam_channel::Receiver;
 use http_body_util::BodyExt;
+use tokio::sync::mpsc::Receiver;
 use std::sync::Arc;
 use tracing::info;
 
-pub async fn worker_thread(rx: Receiver<(Body, String)>, cx: Arc<RouteContext>) -> Result<()> {
+pub async fn worker_thread(mut rx: Receiver<(Body, String)>, cx: Arc<RouteContext>) -> Result<()> {
     let mut conn = cx.pool.get().await?;
     
     info!("Started upload worker thread!");
 
     loop {
-        let Ok((body, path)) = rx.recv() else {
+        let Some((body, path)) = rx.recv().await else {
             break;
         };
 

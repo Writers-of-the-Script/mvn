@@ -2,8 +2,8 @@ use crate::{db::DbPool, s3::S3Config};
 use anyhow::Result;
 use axum::body::Body;
 use chrono::{DateTime, Utc};
-use crossbeam_channel::Sender;
 use object_store::aws::{AmazonS3, AmazonS3Builder};
+use tokio::sync::mpsc::Sender;
 use std::sync::Arc;
 
 pub struct RouteContext {

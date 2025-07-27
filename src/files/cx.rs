@@ -170,8 +170,8 @@ impl RouteContext {
         .replace("//", "/")
     }
 
-    pub fn queue_upload(&self, body: Body, path: impl AsRef<str>) {
-        self.tx.send((body, path.as_ref().into())).unwrap();
+    pub async fn queue_upload(&self, body: Body, path: impl AsRef<str>) {
+        self.tx.send((body, path.as_ref().into())).await.unwrap();
     }
 
     pub async fn num_files(&self) -> Result<u64> {

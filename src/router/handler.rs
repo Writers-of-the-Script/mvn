@@ -62,7 +62,7 @@ pub async fn route_handler(
 
             debug!("Queueing upload...");
 
-            cx.queue_upload(req.into_body(), &path);
+            cx.queue_upload(req.into_body(), &path).await;
 
             debug!("Passing back to GET handler...");
 
