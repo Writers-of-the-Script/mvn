@@ -16,3 +16,4 @@ docker-compose.prod.yml
 /*.conf
 /minio-data
 /db-data
+/nginx-data

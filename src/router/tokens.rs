@@ -21,9 +21,15 @@ pub async fn new_token_route(
 ) -> Result<Json<MavenTokenSafe>, Response> {
     let generated = data.value.is_none();
 
+    debug!("Validating master key...");
+
     if !state.validate_master_key(key).await.into_axum()? {
+        debug!("Master key invalid!");
+
         Err(anyhow!("Invalid master key!")).into_axum()
     } else {
+        debug!("Validated! Creating token...");
+
         Ok(Json(
             state
                 .create_token(data.into(), generated)

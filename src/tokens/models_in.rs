@@ -48,6 +48,8 @@ impl MavenTokenPathIn {
 
 impl MavenTokenIn {
     pub fn new_random(name: impl AsRef<str>) -> Self {
+        debug!("Generating new random token...");
+        
         Self {
             name: name.as_ref().into(),
             value: random_string::generate(32, ALPHANUMERIC),

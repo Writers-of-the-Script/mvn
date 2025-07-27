@@ -32,7 +32,11 @@ impl RouteContext {
     ) -> Result<MavenTokenSafe> {
         let orig_value = token.value.clone();
 
+        debug!("Hashing token...");
+        
         token.value = hash_token_value(token.value)?;
+
+        debug!("Inserting into db...");
 
         Ok(insert_into(tokens::table)
             .values(token)
