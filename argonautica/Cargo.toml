@@ -50,11 +50,16 @@ tokio = { version = "1.45.1", features = ["rt"] }
 thiserror = "2.0.12"
 
 [build-dependencies]
-bindgen = "0.71.1"
 cfg-if = "1.0.0"
 cc = { version = "1.2.25", features = ["parallel"] }
 tempfile = "3.20"
 anyhow = "1.0.98"
+
+[target.'cfg(not(target_env = "musl"))'.build-dependencies]
+bindgen = "0.72.0"
+
+[target.'cfg(target_env = "musl")'.build-dependencies]
+bindgen = { version = "0.72.0", default-features = false, features = ["static"] }
 
 [dev-dependencies]
 dotenv = "0.15"

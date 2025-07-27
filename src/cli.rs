@@ -11,11 +11,11 @@ use tracing_subscriber::{
 #[command(name = "SuperMaven", version, about, author, long_about = None)]
 pub struct Cli {
     /// The address to host the server on.
-    #[arg(short = 'H', long, default_value = "0.0.0.0")]
+    #[arg(short = 'H', long, env = "MAVEN_HOST", default_value = "0.0.0.0")]
     pub host: String,
 
     /// The port to host the server on.
-    #[arg(short, long, default_value_t = 4000)]
+    #[arg(short, long, env = "MAVEN_PORT", default_value_t = 4000)]
     pub port: u16,
 
     /// The database connection string.
