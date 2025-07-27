@@ -121,6 +121,7 @@
                 flex-direction: column;
                 background-color: #111111;
                 padding: 1rem;
+                margin-bottom: 1rem;
             }
 
             .token {
@@ -438,6 +439,76 @@
                 align-items: center;
                 justify-content: flex-start;
             }
+
+            .route-access {
+                display: flex;
+                flex-direction: column;
+                background-color: #111111;
+                padding: 1rem;
+            }
+
+            .route-access .title {
+                font-size: 14pt;
+                font-weight: bold;
+                padding: 0;
+                margin: 0;
+                margin-bottom: 1rem;
+            }
+
+            .access-item {
+                display: flex;
+                flex-direction: row;
+                background-color: #222222;
+                padding: 0.25rem 1rem;
+                align-items: center;
+                justify-content: space-between;
+            }
+
+            .access-item:not(:last-child) {
+                margin-bottom: 1rem;
+            }
+
+            .access-info {
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                justify-content: start;
+            }
+
+            .access-info > p {
+                margin: 0;
+                padding: 0;
+            }
+
+            .access-actions {
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                justify-content: flex-end;
+            }
+
+            .access-action {
+                background-color: transparent;
+                border: none;
+                padding: 0.5rem;
+                margin: 0;
+                cursor: pointer;
+                transition: background-color 0.25s ease;
+            }
+
+            .access-action:hover {
+                background-color: #333333;
+            }
+
+            .access-info-path {
+                color: #ff1dbb;
+                padding-right: 0.75rem !important;
+            }
+
+            .access-info-value {
+                color: #f7ea39;
+                padding-left: 0.75rem !important;
+            }
         </style>
     </head>
     <body>
@@ -543,6 +614,40 @@
                     type="button"
                     class="new-token-submit"
                     onclick="addPath()"
+                >
+                    Add
+                </button>
+            </div>
+        </div>
+
+        <div id="new-access-bg" class="new-token-bg hidden">
+            <div class="new-token" id="new-access">
+                <h3>Edit Route Access</h3>
+
+                <input
+                    type="text"
+                    id="access-route"
+                    class="new-token-input"
+                    placeholder="Route..."
+                />
+
+                <p class="new-token-error hidden" id="access-route-error"></p>
+
+                <select
+                    id="access-value"
+                    class="new-token-input"
+                    placeholder="Access..."
+                    style="cursor: pointer"
+                >
+                    <option value="0">Public (anyone can view)</option>
+                    <option value="1">Hidden (no browsing)</option>
+                    <option value="2">Private (requires auth)</option>
+                </select>
+
+                <button
+                    type="button"
+                    class="new-token-submit"
+                    onclick="addRouteAccess()"
                 >
                     Add
                 </button>
@@ -674,6 +779,47 @@
                     Create
                 </button>
             </div>
+
+            <div class="route-access">
+                <p class="title">Route Access</p>
+
+                {% for route in routes %}
+                <div class="access-item">
+                    <div class="access-info">
+                        <p class="access-info-path">{{ route.path }}</p>
+                        <p class="access-info-dash">-</p>
+                        <p class="access-info-value">{{ route.access }}</p>
+                    </div>
+
+                    <div class="access-actions">
+                        <button
+                            type="button"
+                            class="access-action"
+                            onclick="deleteRouteAccess('{{ route.path }}')"
+                        >
+                            <img
+                                src="/admin/assets/trash.svg"
+                                width="30px"
+                                height="30px"
+                            />
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+
+                <button
+                    type="button"
+                    class="token-create"
+                    onclick="showRouteAccessModal()"
+                >
+                    <img
+                        src="/admin/assets/plus.svg"
+                        width="25px"
+                        height="25px"
+                    />
+                    Create
+                </button>
+            </div>
         </div>
 
         <script>
@@ -710,6 +856,12 @@
             const pathAccessInput = getInput("path-access");
             const pathErrOutput = byId("path-route-error");
 
+            const newAccess = byId("new-access");
+            const newAccessBg = byId("new-access-bg");
+            const newAccessRouteInput = getInput("access-route");
+            const newAccessErrorOutput = byId("access-route-error");
+            const newAccessValueInput = getInput("access-value");
+
             for (const el of hidden) {
                 el.addEventListener("click", () => {
                     el.classList.remove("hidden");
@@ -722,6 +874,20 @@
 
                 newTokenBg.classList.add("hidden");
                 resetCreateModal(false);
+            });
+
+            newPathBg.addEventListener("click", (ev) => {
+                if (newPath.contains(ev.target)) return;
+
+                newPathBg.classList.add("hidden");
+                resetPathModal(false);
+            });
+
+            newAccessBg.addEventListener("click", (ev) => {
+                if (newAccess.contains(ev.target)) return;
+
+                newAccessBg.classList.add("hidden");
+                resetRouteModal(false);
             });
 
             function copy(text) {
@@ -901,6 +1067,60 @@
             function showCreateTokenModal() {
                 resetCreateModal(false);
                 newTokenBg.classList.remove("hidden");
+            }
+
+            const resetRouteModal = (full) => {
+                newAccessRouteInput.classList.remove("error");
+                newAccessValueInput.classList.remove("error");
+                newAccessErrorOutput.classList.add("hidden");
+                newAccessErrorOutput.innerText = "";
+
+                if (full) {
+                    newAccessRouteInput.value = "";
+                    newAccessValueInput.value = "0";
+                }
+            };
+
+            async function addRouteAccess() {
+                const route = newAccessRouteInput.value.trim();
+                const access = newAccessValueInput.value.trim();
+
+                if (route == "") {
+                    newAccessRouteInput.classList.add("error");
+                    newAccessErrorOutput.innerText = "^ Path must not be empty!";
+                    newAccessErrorOutput.classList.remove("hidden");
+
+                    return;
+                }
+
+                const res = await request("/api/access", "PUT", {
+                    path: route,
+                    visibility: parseInt(access),
+                });
+
+                if (!(res instanceof Response)) {
+                    alert(res);
+                    return;
+                }
+
+                resetRouteModal(true);
+                newAccessBg.classList.add("hidden");
+                window.location.reload();
+            }
+
+            async function deleteRouteAccess(path) {
+                if (
+                    !await userRequest("/api/access", "DELETE", {
+                        path,
+                    })
+                ) return;
+
+                window.location.reload();
+            }
+
+            function showRouteAccessModal() {
+                resetRouteModal(false);
+                newAccessBg.classList.remove("hidden");
             }
         </script>
     </body>

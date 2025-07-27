@@ -88,11 +88,12 @@ impl RouteContext {
         ))
     }
 
-    pub async fn upload(&self, path: impl AsRef<str>, bytes: impl AsRef<[u8]>) -> Result<()> {
-        Ok(self.upload_inner(path, bytes).await?)
-    }
-
-    pub async fn upload_inner(&self, path: impl AsRef<str>, bytes: impl AsRef<[u8]>) -> Result<()> {
+    pub async fn upload(
+        &self,
+        path: impl AsRef<str>,
+        bytes: impl AsRef<[u8]>,
+    ) -> Result<MavenFile> {
+        let mut conn = self.pool.get().await?;
         let path = format!("/{}", path.as_ref()).replace("//", "/");
 
         if HASH_TYPES
@@ -103,15 +104,12 @@ impl RouteContext {
             let real = path.trim_end_matches(&format!(".{}", alg));
             let given = String::from_utf8(bytes.as_ref().to_vec())?;
 
-            return match self
-                .get_file_inner(&real.to_owned(), &mut self.pool.get().await?)
-                .await
-            {
+            return match self.get_file_inner(&real.to_owned(), &mut conn).await {
                 Ok(file) => {
                     let existing = file.get_hash(alg)?;
 
                     if existing == given {
-                        Ok(())
+                        Ok(file)
                     } else {
                         Err(anyhow!("Hash mismatch: expected {existing}, got {given}"))
                     }
@@ -131,31 +129,25 @@ impl RouteContext {
             )
             .await?;
 
-        self.tx.send(file).await?;
-
-        Ok(())
-    }
-
-    pub async fn push_file_to_db(
-        &self,
-        file: &MavenFileIn,
-        conn: &mut impl AsyncConnection<Backend = Pg>,
-    ) -> Result<MavenFile> {
         debug!("Checking for existing record...");
 
-        if self.has_file_inner(&file.path, conn).await {
+        if self.has_file_inner(&file.path, &mut conn).await {
             debug!("Deleting existing record...");
 
-            self.delete_file_inner(&file.path, conn).await?;
+            self.delete_file_inner(&file.path, &mut conn).await?;
         }
 
         debug!("Inserting into database...");
 
-        Ok(insert_into(files::table)
+        let result = insert_into(files::table)
             .values(file)
             .returning(MavenFile::as_returning())
-            .get_result(conn)
-            .await?)
+            .get_result(&mut conn)
+            .await?;
+
+        self.notify.notify_waiters();
+
+        Ok(result)
     }
 
     pub fn get_path(&self, route: impl AsRef<str>) -> String {

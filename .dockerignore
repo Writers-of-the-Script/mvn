@@ -18,3 +18,4 @@ docker-compose.prod.yml
 /db-data
 /nginx-data
 Dockerfile.debug
+migrator/target

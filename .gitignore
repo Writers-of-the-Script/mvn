@@ -14,3 +14,4 @@ docker-compose.prod.yml
 /minio-data
 /db-data
 /nginx-data
+migrator/target

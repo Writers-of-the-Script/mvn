@@ -54,3 +54,4 @@ pq-sys = { version = "0.6", features = ["bundled"] }
 [workspace]
 resolver = "2"
 members = ["./argonautica"]
+exclude = ["./migrator"]

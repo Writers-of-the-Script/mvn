@@ -9,10 +9,16 @@ use crate::{
 use anyhow::{Result, anyhow};
 use rustls::crypto::ring;
 use std::sync::Arc;
-use tokio::{net::TcpListener, sync::mpsc::channel};
+use tokio::{net::TcpListener, sync::Notify};
 use tracing::info;
 
-pub async fn run(host: impl AsRef<str>, port: u16, db: String, master_key: Option<String>, s3: S3Config) -> Result<()> {
+pub async fn run(
+    host: impl AsRef<str>,
+    port: u16,
+    db: String,
+    master_key: Option<String>,
+    s3: S3Config,
+) -> Result<()> {
     info!("Initializing rustls...");
 
     ring::default_provider()
@@ -33,11 +39,11 @@ pub async fn run(host: impl AsRef<str>, port: u16, db: String, master_key: Optio
 
     info!("Creating channel...");
 
-    let (tx, rx) = channel(1000);
+    let notify = Arc::new(Notify::new());
 
     info!("Building context...");
 
-    let cx = Arc::new(RouteContext::create(s3, pool, tx).await?);
+    let cx = Arc::new(RouteContext::create(s3, pool, Arc::clone(&notify)).await?);
 
     info!("Indexing...");
 
@@ -47,7 +53,7 @@ pub async fn run(host: impl AsRef<str>, port: u16, db: String, master_key: Optio
 
     let cx_clone = Arc::clone(&cx);
 
-    tokio::task::spawn(async move { worker_thread(rx, cx_clone).await });
+    tokio::task::spawn(async move { worker_thread(notify, cx_clone).await });
 
     info!("Creating app...");
 

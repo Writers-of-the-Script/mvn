@@ -65,7 +65,7 @@ pub async fn route_handler(
 
             let collected = req.into_body().collect().await.into_axum()?;
 
-            cx.upload_inner(&path, collected.to_bytes()).await.unwrap();
+            cx.upload(&path, collected.to_bytes()).await.unwrap();
 
             // cx.queue_upload(req.into_body(), &path).await.into_axum()?;
 

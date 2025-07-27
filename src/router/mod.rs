@@ -1,7 +1,9 @@
 use std::sync::Arc;
 
 use crate::cx::RouteContext;
-use admin::{admin_dashboard_route, auth_route, set_route_access};
+use admin::{
+    admin_dashboard_route, auth_route, delete_route_access, login_route, set_route_access,
+};
 use assets::{
     copy_svg_route, jbm_font_route, page_js_route, plus_svg_route, robots_txt_route,
     trash_svg_route,
@@ -9,7 +11,7 @@ use assets::{
 use axum::{
     Router,
     middleware::{from_fn, from_fn_with_state},
-    routing::{delete, get, post, put},
+    routing::{delete, get, put},
 };
 use force_auth::force_auth_middleware;
 use handler::route_handler;
@@ -46,7 +48,8 @@ pub fn build_router<S>(cx: Arc<RouteContext>) -> Router<S> {
         .route("/api/token/paths", get(get_token_paths_route))
         .route("/api/token/paths", put(add_path_route))
         .route("/api/token/paths", delete(delete_path_route))
-        .route("/api/access", post(set_route_access))
+        .route("/api/access", put(set_route_access))
+        .route("/api/access", delete(delete_route_access))
         .route("/assets/fonts/jetbrains-mono.woff2", get(jbm_font_route))
         .route("/assets/js/page.js", get(page_js_route))
         .route("/robots.txt", get(robots_txt_route))
@@ -54,6 +57,7 @@ pub fn build_router<S>(cx: Arc<RouteContext>) -> Router<S> {
         .route("/admin/assets/copy.svg", get(copy_svg_route))
         .route("/admin/assets/plus.svg", get(plus_svg_route))
         .route("/admin/assets/trash.svg", get(trash_svg_route))
+        .route("/login", get(login_route))
         .layer(from_fn(logging_middleware))
         .layer(from_fn_with_state(Arc::clone(&cx), force_auth_middleware))
         .with_state(cx)

@@ -6,8 +6,8 @@ use itertools::Itertools;
 
 use crate::{
     cx::RouteContext,
-    router::stats::InstanceStats,
-    schema::{token_paths, tokens},
+    router::{access::RouteAccess, models::RouteData, stats::InstanceStats},
+    schema::{route_data, token_paths, tokens},
     tokens::{
         models::{MavenToken, MavenTokenPath},
         perms::MavenTokenPermissions,
@@ -35,23 +35,47 @@ impl Into<HumanTokenPath> for MavenTokenPath {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+pub struct RouteInfo {
+    pub path: String,
+    pub access: String,
+}
+
+impl Into<RouteInfo> for RouteData {
+    fn into(self) -> RouteInfo {
+        RouteInfo {
+            path: self.path,
+            access: match RouteAccess::from_value(self.visibility) {
+                Ok(RouteAccess::Public) => "Public",
+                Ok(RouteAccess::Hidden) => "Hidden",
+                Ok(RouteAccess::Private) => "Private",
+                _ => "Unknown",
+            }
+            .into(),
+        }
+    }
+}
+
 #[derive(Template)]
 #[template(path = "admin.html")]
 pub struct AdminDashboard {
     pub master_key: String,
     pub tokens: Vec<(MavenToken, Vec<HumanTokenPath>)>,
     pub stats: InstanceStats,
+    pub routes: Vec<RouteInfo>,
 }
 
 impl AdminDashboard {
     pub async fn get(master_key: String, cx: &RouteContext) -> Result<Self> {
+        let mut conn = cx.pool.get().await?;
+
         let tokens = tokens::table
             .left_join(token_paths::table)
             .select((
                 MavenToken::as_select(),
                 Option::<MavenTokenPath>::as_select(),
             ))
-            .load::<(MavenToken, Option<MavenTokenPath>)>(&mut cx.pool.get().await?)
+            .load::<(MavenToken, Option<MavenTokenPath>)>(&mut conn)
             .await?
             .into_iter()
             .into_group_map()
@@ -69,10 +93,19 @@ impl AdminDashboard {
             .sorted_by_cached_key(|it| it.0.created)
             .collect_vec();
 
+        let routes = route_data::table
+            .select(RouteData::as_select())
+            .load(&mut conn)
+            .await?
+            .into_iter()
+            .map(Into::into)
+            .collect_vec();
+
         Ok(Self {
             master_key,
             tokens,
             stats: cx.stats().await?,
+            routes,
         })
     }
 }

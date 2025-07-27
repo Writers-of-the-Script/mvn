@@ -29,6 +29,11 @@ pub struct RemovePathRouteData {
     pub path: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DeleteRouteAccessData {
+    pub path: String,
+}
+
 impl Into<MavenTokenIn> for AddTokenRouteData {
     fn into(self) -> MavenTokenIn {
         match self.value {
