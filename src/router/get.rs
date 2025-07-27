@@ -142,7 +142,7 @@ pub async fn get_handler(
                     path: format!("{}/", path).replace("//", "/"),
                     files,
                     folders,
-                    title: "Redstone's Maven".into(),
+                    title: "The Broken Script Maven".into(),
                 };
 
                 debug!("Responding...");
