@@ -64,9 +64,12 @@ pub async fn route_handler(
 
             cx.queue_upload(req.into_body(), &path).await;
 
-            debug!("Passing back to GET handler...");
+            debug!("Queued!");
 
-            get_handler(cx, path, auth).await
+            Ok(Response::builder()
+                .status(200)
+                .body("Uploaded!".into())
+                .into_axum()?)
         }
 
         Method::DELETE => {
@@ -95,8 +98,7 @@ pub async fn route_handler(
 
                 debug!("Re-indexing dirs...");
 
-                cx
-                    .index_dirs(&mut cx.pool.get().await.into_axum()?)
+                cx.index_dirs(&mut cx.pool.get().await.into_axum()?)
                     .await
                     .into_axum()?;
             }
