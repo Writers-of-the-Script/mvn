@@ -10,7 +10,7 @@ use anyhow::{Result, anyhow};
 use rustls::crypto::ring;
 use std::sync::Arc;
 use tokio::net::TcpListener;
-use tokio::sync::mpsc::unbounded_channel;
+use crossbeam_channel::bounded;
 use tracing::info;
 
 pub async fn run(host: impl AsRef<str>, port: u16, db: String, master_key: Option<String>, s3: S3Config) -> Result<()> {
@@ -34,7 +34,7 @@ pub async fn run(host: impl AsRef<str>, port: u16, db: String, master_key: Optio
 
     info!("Creating channel...");
 
-    let (tx, rx) = unbounded_channel();
+    let (tx, rx) = bounded(100);
 
     info!("Building context...");
 

@@ -2,14 +2,14 @@ use crate::{db::DbPool, s3::S3Config};
 use anyhow::Result;
 use axum::body::Body;
 use chrono::{DateTime, Utc};
+use crossbeam_channel::Sender;
 use object_store::aws::{AmazonS3, AmazonS3Builder};
 use std::sync::Arc;
-use tokio::sync::mpsc::UnboundedSender;
 
 pub struct RouteContext {
     pub storage: Arc<AmazonS3>,
     pub pool: DbPool,
-    pub tx: UnboundedSender<(Body, String)>,
+    pub tx: Sender<(Body, String)>,
     pub start_time: DateTime<Utc>,
 }
 
@@ -17,7 +17,7 @@ impl RouteContext {
     pub async fn create(
         s3: S3Config,
         conn: DbPool,
-        tx: UnboundedSender<(Body, String)>,
+        tx: Sender<(Body, String)>,
     ) -> Result<Self> {
         let mut builder = AmazonS3Builder::new()
             .with_region(s3.region)
