@@ -33,7 +33,7 @@ pub async fn run(host: impl AsRef<str>, port: u16, db: String, master_key: Optio
 
     info!("Creating channel...");
 
-    let (tx, rx) = channel(100);
+    let (tx, rx) = channel(1000);
 
     info!("Building context...");
 
