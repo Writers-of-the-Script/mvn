@@ -1,6 +1,5 @@
-use crate::{db::DbPool, s3::S3Config};
+use crate::{db::DbPool, files::models_in::MavenFileIn, s3::S3Config};
 use anyhow::Result;
-use axum::body::Body;
 use chrono::{DateTime, Utc};
 use object_store::aws::{AmazonS3, AmazonS3Builder};
 use tokio::sync::mpsc::Sender;
@@ -9,7 +8,7 @@ use std::sync::Arc;
 pub struct RouteContext {
     pub storage: Arc<AmazonS3>,
     pub pool: DbPool,
-    pub tx: Sender<(Body, String)>,
+    pub tx: Sender<MavenFileIn>,
     pub start_time: DateTime<Utc>,
 }
 
@@ -17,7 +16,7 @@ impl RouteContext {
     pub async fn create(
         s3: S3Config,
         conn: DbPool,
-        tx: Sender<(Body, String)>,
+        tx: Sender<MavenFileIn>,
     ) -> Result<Self> {
         let mut builder = AmazonS3Builder::new()
             .with_region(s3.region)

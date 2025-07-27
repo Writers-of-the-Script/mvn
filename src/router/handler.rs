@@ -9,6 +9,7 @@ use axum::{
     response::Response,
 };
 use axum_extra::TypedHeader;
+use http_body_util::BodyExt;
 
 #[axum::debug_handler]
 pub async fn route_handler(
@@ -62,7 +63,11 @@ pub async fn route_handler(
 
             debug!("Queueing upload...");
 
-            cx.queue_upload(req.into_body(), &path).await;
+            let collected = req.into_body().collect().await.into_axum()?;
+
+            cx.upload_inner(&path, collected.to_bytes()).await.unwrap();
+
+            // cx.queue_upload(req.into_body(), &path).await.into_axum()?;
 
             debug!("Queued!");
 

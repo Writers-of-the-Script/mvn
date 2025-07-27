@@ -1,39 +1,31 @@
 #![allow(static_mut_refs)]
 
-use crate::cx::RouteContext;
+use crate::{cx::RouteContext, files::models_in::MavenFileIn};
 use anyhow::Result;
-use axum::body::Body;
-use http_body_util::BodyExt;
 use tokio::sync::mpsc::Receiver;
 use std::sync::Arc;
 use tracing::info;
 
-pub async fn worker_thread(mut rx: Receiver<(Body, String)>, cx: Arc<RouteContext>) -> Result<()> {
+pub async fn worker_thread(mut rx: Receiver<MavenFileIn>, cx: Arc<RouteContext>) -> Result<()> {
     let mut conn = cx.pool.get().await?;
     
     info!("Started upload worker thread!");
 
     loop {
-        let Some((body, path)) = rx.recv().await else {
+        let Some(file) = rx.recv().await else {
             break;
         };
 
-        info!("Uploading {path}...");
+        info!("Pushing {}...", file.path);
 
-        debug!("Collecting bytes...");
-
-        let collected = body.collect().await?;
-
-        debug!("Uploading to S3 and DB...");
-
-        cx.upload_inner(&path, collected.to_bytes(), &mut conn)
+        cx.push_file_to_db(&file, &mut conn)
             .await.unwrap();
 
         debug!("Re-indexing dirs...");
 
         cx.index_dirs(&mut conn).await?;
 
-        info!("Successfully uploaded {path}!");
+        info!("Successfully uploaded {}!", file.path);
     }
 
     Ok(())

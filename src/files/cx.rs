@@ -5,7 +5,6 @@ use crate::{
     schema::{files, tokens},
 };
 use anyhow::{Result, anyhow};
-use axum::body::Body;
 use chrono::Utc;
 use diesel::{ExpressionMethods, QueryDsl, SelectableHelper, delete, insert_into, pg::Pg};
 use diesel_async::{AsyncConnection, RunQueryDsl};
@@ -89,22 +88,11 @@ impl RouteContext {
         ))
     }
 
-    pub async fn upload(
-        &self,
-        path: impl AsRef<str>,
-        bytes: impl AsRef<[u8]>,
-    ) -> Result<MavenFile> {
-        Ok(self
-            .upload_inner(path, bytes, &mut self.pool.get().await?)
-            .await?)
+    pub async fn upload(&self, path: impl AsRef<str>, bytes: impl AsRef<[u8]>) -> Result<()> {
+        Ok(self.upload_inner(path, bytes).await?)
     }
 
-    pub async fn upload_inner(
-        &self,
-        path: impl AsRef<str>,
-        bytes: impl AsRef<[u8]>,
-        conn: &mut impl AsyncConnection<Backend = Pg>,
-    ) -> Result<MavenFile> {
+    pub async fn upload_inner(&self, path: impl AsRef<str>, bytes: impl AsRef<[u8]>) -> Result<()> {
         let path = format!("/{}", path.as_ref()).replace("//", "/");
 
         if HASH_TYPES
@@ -115,12 +103,15 @@ impl RouteContext {
             let real = path.trim_end_matches(&format!(".{}", alg));
             let given = String::from_utf8(bytes.as_ref().to_vec())?;
 
-            return match self.get_file_inner(&real.to_owned(), conn).await {
+            return match self
+                .get_file_inner(&real.to_owned(), &mut self.pool.get().await?)
+                .await
+            {
                 Ok(file) => {
                     let existing = file.get_hash(alg)?;
 
                     if existing == given {
-                        Ok(file.clone())
+                        Ok(())
                     } else {
                         Err(anyhow!("Hash mismatch: expected {existing}, got {given}"))
                     }
@@ -140,6 +131,16 @@ impl RouteContext {
             )
             .await?;
 
+        self.tx.send(file).await?;
+
+        Ok(())
+    }
+
+    pub async fn push_file_to_db(
+        &self,
+        file: &MavenFileIn,
+        conn: &mut impl AsyncConnection<Backend = Pg>,
+    ) -> Result<MavenFile> {
         debug!("Checking for existing record...");
 
         if self.has_file_inner(&file.path, conn).await {
@@ -168,10 +169,6 @@ impl RouteContext {
                 .trim_end_matches(".sha512")
         )
         .replace("//", "/")
-    }
-
-    pub async fn queue_upload(&self, body: Body, path: impl AsRef<str>) {
-        self.tx.send((body, path.as_ref().into())).await.unwrap();
     }
 
     pub async fn num_files(&self) -> Result<u64> {
