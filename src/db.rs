@@ -10,8 +10,6 @@ use diesel_async::{
 };
 use diesel_migrations::{EmbeddedMigrations, MigrationHarness, embed_migrations};
 use futures_util::{FutureExt, future::BoxFuture};
-use rustls::ClientConfig;
-use rustls_platform_verifier::ConfigVerifierExt;
 use std::env;
 
 pub type DbConn = AsyncPgConnection;
@@ -43,7 +41,15 @@ pub async fn connect_single(url: Option<String>) -> Result<DbConn> {
 
 fn establish_connection(config: &'_ str) -> BoxFuture<'_, ConnectionResult<AsyncPgConnection>> {
     let fut = async {
-        let rustls_config = ClientConfig::with_platform_verifier().unwrap();
+        #[cfg(not(debug_assertions))]
+        let rustls_config = <rustls::ClientConfig as rustls_platform_verifier::ConfigVerifierExt>::with_platform_verifier().unwrap();
+
+        #[cfg(debug_assertions)]
+        let rustls_config =
+            crate::tls::CustomVerifiers::with_ignore_hosts_verifier(rustls::ClientConfig::builder())
+                .unwrap()
+                .with_no_client_auth();
+
         let tls = tokio_postgres_rustls::MakeRustlsConnect::new(rustls_config);
 
         let (client, conn) = tokio_postgres::connect(config, tls)

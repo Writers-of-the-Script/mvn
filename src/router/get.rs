@@ -138,11 +138,26 @@ pub async fn get_handler(
 
                 debug!("Building template...");
 
+                let path = format!("{}/", path).replace("//", "/");
+                let all = path.split("/").collect::<Vec<_>>();
+                let mut parts = Vec::new();
+                let mut seen = Vec::new();
+
+                for part in all {
+                    if part.is_empty() {
+                        continue;
+                    }
+
+                    seen.push(part.to_string());
+                    parts.push((part.to_string(), format!("/{}/", seen.join("/"))))
+                }
+
                 let data = IndexTemplate {
-                    path: format!("{}/", path).replace("//", "/"),
+                    path,
                     files,
                     folders,
                     title: "The Broken Script Maven".into(),
+                    parts,
                 };
 
                 debug!("Responding...");

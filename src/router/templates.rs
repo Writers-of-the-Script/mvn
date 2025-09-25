@@ -10,6 +10,7 @@ pub struct IndexTemplate {
     pub path: String,
     pub folders: Vec<String>,
     pub files: Vec<FileInfo>,
+    pub parts: Vec<(String, String)>,
 }
 
 #[derive(Debug, Clone)]

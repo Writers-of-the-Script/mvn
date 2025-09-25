@@ -92,10 +92,29 @@
                 align-items: center;
                 justify-content: start;
             }
+
+            h3 > a {
+                margin: 0;
+                padding: 0;
+            }
+
+            h3 {
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                justify-content: start;
+            }
         </style>
     </head>
     <body>
-        <h3>Index of {{ path }}</h3>
+        <h3>
+            Index of&nbsp;
+            <a href="/" class="slash">/</a>
+            {% for (part, full) in parts %}
+                <a href="{{ full }}">{{ part }}</a>
+                <a href="{{ full }}">/</a>
+            {% endfor %}
+        </h3>
         
         <table>
             <thead>
